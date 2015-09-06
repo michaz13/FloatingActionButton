@@ -12,6 +12,23 @@
         android:cacheColorHint="@android:color/transparent"
         android:headerDividersEnabled="false"/>
 
+    <LinearLayout
+        android:id="@+id/no_debts_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical|center"
+        android:orientation="vertical" >
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif"
+            android:gravity="center"
+            android:text="@string/no_items"
+            android:textAlignment="center"
+            android:textSize="20sp" />
+    </LinearLayout>
+
     <com.melnykov.fab.FloatingActionButton
         android:id="@+id/fab"
         android:layout_width="wrap_content"

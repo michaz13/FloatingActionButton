@@ -2,7 +2,13 @@ package com.melnykov.fab.sample;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -20,20 +26,68 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.melnykov.fab.FloatingActionButton;
 import com.melnykov.fab.ObservableScrollView;
 import com.melnykov.fab.ScrollDirectionListener;
+import com.parse.FindCallback;
+import com.parse.ParseAnonymousUtils;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
+import com.parse.ParseQueryAdapter;
+import com.parse.ParseUser;
+import com.parse.SaveCallback;
+import com.parse.ui.ParseLoginBuilder;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final int LOGIN_ACTIVITY_CODE = 100;
+    private static final int EDIT_ACTIVITY_CODE = 200;
+    private static final boolean SHOW_LOGIN_ON_FAIL = true;
+
+    // Adapter for the Debts Parse Query
+    private ParseQueryAdapter<Debt> debtListAdapter;
+
+    private LayoutInflater inflater;
+
+    // For showing empty and non-empty debt views
+    private ListView debtListView;
+    private LinearLayout noDebtsView;
+
+    private TextView loggedInInfoView;
+
+    private boolean isShowLoginOnFail = false;
+    private boolean wasSignupShowen = false;
+
+    private int numPinned;//// TODO: 05/09/2015 remove
+    private int numSaved;//// TODO: 05/09/2015 remove
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initActionBar();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ParseUser curr = ParseUser.getCurrentUser();
+        // Check if we have a real user
+        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+            // Sync data to Parse
+            syncDebtsToParse(!SHOW_LOGIN_ON_FAIL);
+            // Update the logged in label info
+            updateLoggedInInfo();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -107,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
             new AlertDialog.Builder(this)
                     .setTitle(R.string.about)
                     .setView(content)
-                    .setInverseBackgroundForced(true)
+                    .setInverseBackgroundForced(true)// FIXME: 06/09/2015
                     .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -124,14 +178,39 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             View root = inflater.inflate(R.layout.fragment_listview, container, false);
+            // Set up the views
+            debtListView = (ListView) root.findViewById(android.R.id.list);
+            noDebtsView = (LinearLayout) findViewById(R.id.no_debts_view);
+            debtListView.setEmptyView(noDebtsView);
+            loggedInInfoView = (TextView) findViewById(R.id.loggedin_info);
 
-            ListView list = (ListView) root.findViewById(android.R.id.list);
-            ListViewAdapter listAdapter = new ListViewAdapter(getActivity(),
-                    getResources().getStringArray(R.array.countries));
-            list.setAdapter(listAdapter);
+            // Set up the Parse query to use in the adapter
+            ParseQueryAdapter.QueryFactory<Debt> factory = new ParseQueryAdapter.QueryFactory<Debt>() {
+                public ParseQuery<Debt> create() {
+                    ParseQuery<Debt> query = Debt.getQuery();
+                    query.orderByDescending("createdAt");
+                    query.fromLocalDatastore();
+                    return query;
+                }
+            };
+            // Set up the adapter
+            inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            debtListAdapter = new DebtListAdapter(getApplicationContext(), factory);
 
+            // Attach the query adapter to the view
+            debtListView.setAdapter(debtListAdapter);
+
+            debtListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view,
+                                        int position, long id) {
+                    Debt debt = debtListAdapter.getItem(position);
+                    openEditView(debt);
+                }
+            });
+            updateLoggedInInfo();// TODO: 05/09/2015 remove
             FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab);
-            fab.attachToListView(list, new ScrollDirectionListener() {
+            fab.attachToListView(debtListView, new ScrollDirectionListener() {
                 @Override
                 public void onScrollDown() {
                     Log.d("ListViewFragment", "onScrollDown()");
@@ -157,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static class RecyclerViewFragment extends Fragment {
+    public static class RecyclerViewFragment extends Fragment {// REMOVE: 06/09/2015
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             View root = inflater.inflate(R.layout.fragment_recyclerview, container, false);
@@ -179,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static class ScrollViewFragment extends Fragment {
+    public static class ScrollViewFragment extends Fragment {// REMOVE: 06/09/2015
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             View root = inflater.inflate(R.layout.fragment_scrollview, container, false);
@@ -204,5 +283,297 @@ public class MainActivity extends AppCompatActivity {
 
             return root;
         }
+    }
+
+    private void updateLoggedInInfo() {
+
+        // TODO: 05/09/2015 remove info
+        ParseUser curr = ParseUser.getCurrentUser();
+        String token = curr.getSessionToken();
+        boolean isAuth = curr.isAuthenticated();
+        boolean isDataAvai = curr.isDataAvailable();
+        boolean isNew = curr.isNew();
+        boolean isDirty = curr.isDirty();
+        boolean isDirtyFixed = false;
+        boolean isLinked = ParseAnonymousUtils.isLinked(curr);
+        countSavedAndPinnedObjects();
+        String dirtyKey = null;
+        String keys = Arrays.toString(curr.keySet().toArray());
+        int numDirty = 0;
+        if (isDirty) {
+            for (String key : curr.keySet()) {
+                if (curr.isDirty(key)) {
+                    numDirty++;
+                    dirtyKey = key;
+                }
+            }
+            // TODO: 05/09/2015 fix dirty
+            curr = ParseUser.getCurrentUser();
+            isDirty = curr.isDirty();
+            if (!isDirty) {
+                isDirtyFixed = true;
+            }
+        }
+        String info = "\nuser: " + curr.getUsername() + "\nisAuth: " + isAuth + "\nisDataAvai: " + isDataAvai + "\nisNew: " + isNew + "\nisDirty: " + isDirty + (isDirtyFixed ? " (fixed)" : "") + "\nkeys: " + keys + "\ndirtyKey: " + dirtyKey + "\nnumDirty: " + numDirty + "\ntoken: " + token + "\nisLinked: " + isLinked + "\npinned: " + numPinned + "\nsaved: " + numSaved;
+        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+            ParseUser currentUser = ParseUser.getCurrentUser();
+            loggedInInfoView.setText(getString(R.string.logged_in,
+                    currentUser.getString("name")) + info);
+        } else {
+            loggedInInfoView.setText(getString(R.string.not_logged_in) + info);// TODO: 04/09/2015 remove info
+        }
+    }
+
+    private void countSavedAndPinnedObjects() {
+        ParseQuery<Debt> query = Debt.getQuery();
+        query.fromPin(DebtListApplication.DEBT_GROUP_NAME);
+        query.findInBackground(new FindCallback<Debt>() {
+            public void done(List<Debt> debts, ParseException e) {
+                if (debts != null) {
+                    numPinned = debts.size();
+                } else {
+                    numPinned = -1;
+                }
+                if (e != null) {
+                    numPinned = -2;
+                }
+            }
+        });
+    }
+
+    private void openEditView(Debt debt) {
+        Intent i = new Intent(this, EditDebtActivity.class);
+        i.putExtra("ID", debt.getUuidString());
+        startActivityForResult(i, EDIT_ACTIVITY_CODE);
+    }
+
+    private void logoutFromParse() {
+        // Log out the current user
+        ParseUser.logOut();
+        // Create a new anonymous user
+        ParseAnonymousUtils.logIn(null);// FIXME: 02/09/2015
+        // Clear the view
+        debtListAdapter.clear();
+        // Unpin all the current objects
+        ParseObject.unpinAllInBackground(DebtListApplication.DEBT_GROUP_NAME);
+        // Update the logged in label info
+        updateLoggedInInfo();
+    }
+
+    private void openLoginView() {
+        ParseLoginBuilder builder = new ParseLoginBuilder(getApplicationContext());
+        ParseUser currentUser = ParseUser.getCurrentUser();
+        if (!ParseAnonymousUtils.isLinked(currentUser)) {// FIXME: 05/09/2015
+        }
+        startActivityForResult(builder.build(), LOGIN_ACTIVITY_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        // An OK result means the pinned dataset changed or
+        // log in was successful
+        if (resultCode == RESULT_OK) {
+            if (requestCode == EDIT_ACTIVITY_CODE) {
+                // Coming back from the edit view, update the view
+                debtListAdapter.loadObjects();
+            } else if (requestCode == LOGIN_ACTIVITY_CODE) {
+                // If the user is new, sync data to Parse,
+                // else get the current list from Parse
+                syncDebtsToParse(SHOW_LOGIN_ON_FAIL);// FIXME: 06/09/2015 add if
+                if (ParseUser.getCurrentUser().isNew()) {
+                } else {
+                    loadFromParse();
+                }
+            }
+            updateLoggedInInfo();// TODO: 05/09/2015 remove?
+        }
+
+    }
+
+    private void syncDebtsToParse(final boolean isShowLoginOnFail) {
+        // We could use saveEventually here, but we want to have some UI
+        // around whether or not the draft has been saved to Parse
+        wasSignupShowen = false;// FIXME: 06/09/2015 ?
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo ni = cm.getActiveNetworkInfo();
+        if ((ni != null) && (ni.isConnected())) {
+            if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+                // If we have a network connection and a current logged in user, sync the debts
+                // In this app, local changes should overwrite content on the server.
+                ParseQuery<Debt> query = Debt.getQuery();
+                query.fromPin(DebtListApplication.DEBT_GROUP_NAME);
+                query.whereEqualTo("isDraft", true);
+                query.findInBackground(new FindCallback<Debt>() {
+                    public void done(List<Debt> debts, ParseException e) {
+                        if (e == null) {
+                            for (final Debt debt : debts) {
+                                // Set is draft flag to false before
+                                // syncing to Parse
+                                debt.setDraft(false);
+                                debt.saveInBackground(new SaveCallback() {// FIXME: 04/09/2015
+
+                                    @Override
+                                    public void done(ParseException e) {
+                                        if (e == null) {
+                                            // Let adapter know to update view
+                                            if (!isFinishing()) {
+                                                debtListAdapter.notifyDataSetChanged();
+                                            }
+                                        } else {
+                                            if (!isShowLoginOnFail) {
+                                                Toast.makeText(getApplicationContext(),
+                                                        e.getMessage(),
+                                                        Toast.LENGTH_SHORT).show();
+                                            }
+                                            // Reset the is draft flag locally to true
+                                            debt.setDraft(true);
+                                            // Save flag field as late as possible - to deal with
+                                            // asynchronous callback
+                                            MainActivity.this.isShowLoginOnFail = isShowLoginOnFail;
+                                            handleParseError(e);// FIXME: 05/09/2015
+                                        }
+                                    }
+
+                                });
+                            }
+                        } else {
+                            Log.i("DebtListActivity",
+                                    "syncDebtsToParse: Error finding pinned debts: "
+                                            + e.getMessage());
+                        }
+                    }
+                });
+            } else {
+                // If we have a network connection but no logged in user, direct
+                // the person to log in or sign up.
+                openLoginView();
+            }
+        } else {
+            // If there is no connection, let the user know the sync didn't
+            // happen
+            Toast.makeText(
+                    getApplicationContext(),
+                    "Your device appears to be offline. Some debts may not have been synced to Parse.",
+                    Toast.LENGTH_LONG).show();
+        }
+
+    }
+
+    private void loadFromParse() {
+        ParseQuery<Debt> query = Debt.getQuery();
+        query.whereEqualTo("author", ParseUser.getCurrentUser());
+        query.findInBackground(new FindCallback<Debt>() {
+            public void done(List<Debt> debts, ParseException e) {
+                if (e == null) {
+                    ParseObject.pinAllInBackground(debts,
+                            new SaveCallback() {
+                                public void done(ParseException e) {
+                                    if (e == null) {
+                                        if (!isFinishing()) {
+                                            debtListAdapter.loadObjects();
+                                        }
+                                    } else {
+                                        Log.i("DebtListActivity",
+                                                "Error pinning debts: "
+                                                        + e.getMessage());
+                                    }
+                                }
+                            });
+                } else {
+                    Log.i("DebtListActivity",
+                            "loadFromParse: Error finding pinned debts: "
+                                    + e.getMessage());
+                }
+            }
+        });
+    }
+
+    public void handleParseError(ParseException e) {
+        handleInvalidSessionToken();// TODO: 05/09/2015
+
+        /*        switch (e.getCode()) {
+            case ParseException.INVALID_SESSION_TOKEN:
+                handleInvalidSessionToken();
+                break;
+
+            // Other Parse API errors
+        }*/
+    }
+
+    private void handleInvalidSessionToken() {
+        //--------------------------------------
+        // Option 1: Show a message asking the user to log out and log back in.// REMOVE: 06/09/2015
+        //--------------------------------------
+        // If the user needs to finish what they were doing, they have the opportunity to do so.
+        //
+        // new AlertDialog.Builder(getActivity())
+        //   .setMessage("Session is no longer valid, please log out and log in again.")
+        //   .setCancelable(false).setPositiveButton("OK", ...).create().show();
+
+        //--------------------------------------
+        // Option #2: Show login screen so user can re-authenticate.
+        //--------------------------------------
+        // You may want this if the logout button could be inaccessible in the UI.
+        //
+        // startActivityForResult(new ParseLoginBuilder(getActivity()).build(), 0);
+        if (isShowLoginOnFail && !wasSignupShowen) {
+            // only in case the user initiated the sync - no demanding login
+            wasSignupShowen = true;
+            openLoginView();
+        } else {
+            Toast.makeText(getApplicationContext(),
+                    "Didn't show login\nisShowLoginOnFail: "+isShowLoginOnFail+"\nwasSignupShowen: "+wasSignupShowen,
+                    Toast.LENGTH_SHORT).show();// REMOVE: 06/09/2015
+        }
+    }
+
+    private class DebtListAdapter extends ParseQueryAdapter<Debt> {
+
+        public DebtListAdapter(Context context,
+                               QueryFactory<Debt> queryFactory) {
+            super(context, queryFactory);
+        }
+
+        @Override
+        public View getItemView(Debt debt, View view, ViewGroup parent) {
+            ViewHolder holder;
+            if (view == null) {
+                view = inflater.inflate(R.layout.list_item, parent, false);
+                holder = new ViewHolder();
+                holder.debtTitle = (TextView) view
+                        .findViewById(R.id.debt_title);
+                view.setTag(holder);
+            } else {
+                holder = (ViewHolder) view.getTag();
+            }
+            TextView debtTitle = holder.debtTitle;
+
+            // TODO: 05/09/2015 remove info
+            ParseUser author = debt.getAuthor();
+            String token = author.getSessionToken();
+            boolean isAuth = author.isAuthenticated();
+            boolean isDataAvai = author.isDataAvailable();
+            boolean isNew = author.isNew();
+            boolean isDirty = author.isDirty();
+            boolean isLinked = ParseAnonymousUtils.isLinked(author);
+//            String info = "\nauthor: "+author.getUsername()+"\nisAuth: "+isAuth+"\nisDataAvai: "+isDataAvai+"\nisNew: "+isNew+"\nisDirty: "+isDirty+"\ntoken: "+token+"\nisLinked: "+isLinked;
+
+
+            debtTitle.setText(debt.getTitle());
+            if (debt.isDraft()) {
+                debtTitle.setTypeface(null, Typeface.ITALIC);
+                debtTitle.setTextColor(Color.RED);// TODO: 02/09/2015 GRAY
+
+            } else {
+                debtTitle.setTypeface(null, Typeface.NORMAL);
+                debtTitle.setTextColor(Color.BLACK);
+            }
+            return view;
+        }
+    }
+
+    private static class ViewHolder {
+        TextView debtTitle;
     }
 }
