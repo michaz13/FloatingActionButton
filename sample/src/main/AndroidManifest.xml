@@ -21,6 +21,10 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".EditDebtActivity"
+            android:label="@string/app_name" >
+        </activity>
+        <activity
             android:name="com.parse.ui.ParseLoginActivity"
             android:label="@string/app_name"
             android:launchMode="singleTop">

@@ -92,4 +92,7 @@
 
     <string name="parse_app_id">1wOBsSzT94l7KHNBFfofmIg0VvpAVVO2o9K7GXoF</string>
     <string name="parse_client_key">M6unV2mvfdN7e24AnoJ9GTE67YjWTf0jZI7Ky3LZ</string>
+
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
