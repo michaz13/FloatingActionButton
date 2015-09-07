@@ -1,11 +1,14 @@
 package com.melnykov.fab.sample;
 
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -37,6 +40,7 @@ import com.parse.SaveCallback;
 import com.parse.ui.ParseLoginBuilder;
 
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -44,21 +48,33 @@ public class MainActivity extends AppCompatActivity {
     public static final int LOGIN_ACTIVITY_CODE = 100;
     public static final int EDIT_ACTIVITY_CODE = 200;
     public static final int EDIT_ACTIVITY_FRAGMENT_CODE = 65736;
-    private static final boolean SHOW_LOGIN_ON_FAIL = true;
+    private static final boolean SHOW_LOGIN_ON_ERROR = true;
 
     private boolean _isShowLoginOnFail = false;
     private boolean _wasSignupShowen = false;
 
     private int numPinned;//// TODO: 05/09/2015 remove
     private int numSaved;//// TODO: 05/09/2015 remove
-    ListViewFragment listIOweViewFragment = null;
-    ListViewFragment listOweMeViewFragment = null;
+    ListViewFragment listIOweViewFragment;
+    ListViewFragment listOweMeViewFragment;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initActionBar();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Check if we have a real user
+        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+            // Sync data to Parse
+            syncDebtsToParse(!SHOW_LOGIN_ON_ERROR);
+            // Update the logged in label info
+            updateLoggedInInfo();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -127,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.action_sync) {
-            syncDebtsToParse(SHOW_LOGIN_ON_FAIL);
+            syncDebtsToParse(SHOW_LOGIN_ON_ERROR);
         }
 
         if (item.getItemId() == R.id.action_logout) {
@@ -216,14 +232,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
-    public void openEditView(Debt debt) {
-        Intent i = new Intent(this, EditDebtActivity.class);
-        i.putExtra("ID", debt.getUuidString());
-        startActivityForResult(i, EDIT_ACTIVITY_CODE);
-    }
-
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -237,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
                 // If the user is new, sync data to Parse,
                 // else get the current list from Parse
-                syncDebtsToParse(SHOW_LOGIN_ON_FAIL);// FIXME: 06/09/2015 add if
+                syncDebtsToParse(SHOW_LOGIN_ON_ERROR);// FIXME: 06/09/2015 add if
                 if (ParseUser.getCurrentUser().isNew()) {
                 } else {
                     loadFromParse();
@@ -248,15 +256,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void setActionBarTitle(String title) {
-        getSupportActionBar().setTitle(title);
-    }
-
     private void openLoginView() {
         ParseLoginBuilder builder = new ParseLoginBuilder(getApplicationContext());
-        ParseUser currentUser = ParseUser.getCurrentUser();
-        if (!ParseAnonymousUtils.isLinked(currentUser)) {// FIXME: 05/09/2015
-        }
         startActivityForResult(builder.build(), LOGIN_ACTIVITY_CODE);
     }
 
@@ -381,7 +382,6 @@ public class MainActivity extends AppCompatActivity {
         }
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             ParseUser currentUser = ParseUser.getCurrentUser();
-            // Set title
             getSupportActionBar().setTitle(getString(R.string.logged_in,
                     currentUser.getString("name")));
         } else {
@@ -428,56 +428,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static class RecyclerViewFragment extends Fragment {// REMOVE: 06/09/2015
 
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            View root = inflater.inflate(R.layout.fragment_recyclerview, container, false);
 
-            RecyclerView recyclerView = (RecyclerView) root.findViewById(R.id.recycler_view);
-            recyclerView.setHasFixedSize(true);
-            recyclerView.setItemAnimator(new DefaultItemAnimator());
-            recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-            recyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL_LIST));
-
-            RecyclerViewAdapter adapter = new RecyclerViewAdapter(getActivity(), getResources()
-                    .getStringArray(R.array.countries));
-            recyclerView.setAdapter(adapter);
-
-            FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab);
-            fab.attachToRecyclerView(recyclerView);
-
-            return root;
-        }
-    }
-
-    public static class ScrollViewFragment extends Fragment {// REMOVE: 06/09/2015
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            View root = inflater.inflate(R.layout.fragment_scrollview, container, false);
-
-            ObservableScrollView scrollView = (ObservableScrollView) root.findViewById(R.id.scroll_view);
-            LinearLayout list = (LinearLayout) root.findViewById(R.id.list);
-
-            String[] countries = getResources().getStringArray(R.array.countries);
-            for (String country : countries) {
-                TextView textView = (TextView) inflater.inflate(R.layout.list_item, container, false);
-                String[] values = country.split(",");
-                String countryName = values[0];
-                int flagResId = getResources().getIdentifier(values[1], "drawable", getActivity().getPackageName());
-                textView.setText(countryName);
-                textView.setCompoundDrawablesWithIntrinsicBounds(flagResId, 0, 0, 0);
-
-                list.addView(textView);
-            }
-
-            FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab);
-            fab.attachToScrollView(scrollView);
-
-            return root;
-        }
-    }
 
 
 }

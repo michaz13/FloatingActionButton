@@ -5,6 +5,7 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
+import java.util.Date;
 import java.util.UUID;
 
 @ParseClassName("Debt")
@@ -15,7 +16,47 @@ public class Debt extends ParseObject {
     }
 
     public void setTitle(String title) {
-        put("title", title);
+        if (title != null) {
+            put("title", title);
+        } else {
+            remove("title");
+        }
+    }
+
+    public String getOwner() {
+        return getString("owner");
+    }
+
+    public void setOwner(String owner) {
+        if (owner != null) {
+            put("owner", owner);
+        } else {
+            remove("owner");
+        }
+    }
+
+    public String getDescription() {
+        return getString("description");
+    }
+
+    public void setDescription(String description) {
+        if (description != null) {
+            put("description", description);
+        } else {
+            remove("description");
+        }
+    }
+
+    public Date getDueDate() {
+        return getDate("dueDate");
+    }
+
+    public void setDueDate(Date dueDate) {
+        if (dueDate != null) {
+            put("dueDate", dueDate);
+        } else {
+            remove("dueDate");
+        }
     }
 
     public ParseUser getAuthor() {
@@ -23,7 +64,11 @@ public class Debt extends ParseObject {
     }
 
     public void setAuthor(ParseUser currentUser) {
-        put("author", currentUser);
+        if (currentUser != null) {
+            put("author", currentUser);
+        } else {
+            remove("author");
+        }
     }
 
     public boolean isDraft() {

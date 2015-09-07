@@ -10,6 +10,7 @@
         android:id="@+id/login_username_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:text=""
         style="@style/ParseLoginUI.EditText"
         android:hint="@string/com_parse_ui_username_input_hint" />
 

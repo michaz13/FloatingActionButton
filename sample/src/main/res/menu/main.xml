@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:yourapp="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_sync"
-        android:icon="@drawable/ic_action_refresh"
-        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_cloud_upload_white_36dp"
+        yourapp:showAsAction="ifRoom"
         android:title="@string/action_sync">
     </item>
 
     <item
         android:id="@+id/action_logout"
-        android:showAsAction="never"
+        yourapp:showAsAction="never"
         android:title="@string/action_logout">
     </item>
 
     <item
         android:id="@+id/action_login"
-        android:showAsAction="never"
+        yourapp:showAsAction="never"
         android:title="@string/action_login">
     </item>
 

@@ -12,12 +12,58 @@
         android:text="@string/debt_prompt" />
 
     <EditText
-        android:id="@+id/debt_text"
+        android:id="@+id/debt_title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:hint="Title"
         android:layout_weight="1"
         android:paddingTop="30dp" >
     </EditText>
+
+    <EditText
+        android:id="@+id/debt_owner"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:hint="Owner"
+        android:layout_weight="1"
+        android:paddingTop="30dp" >
+    </EditText>
+
+    <EditText
+        android:id="@+id/debt_desc"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:hint="Description"
+        android:layout_weight="1"
+        android:paddingTop="30dp" >
+    </EditText>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:layout_weight="1"
+        android:gravity="bottom">
+
+        <CheckBox
+            android:id="@+id/remindCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="false"
+            android:text="Reminder" />
+
+        <Button
+            android:id="@+id/remindButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="5"
+
+            android:text="Set reminder" />
+        <!--android:imeOptions="actionNext"-->
+        <!--android:nextFocusForward="@+id/btnOK"-->
+    </LinearLayout>
 
     <Button
         android:id="@+id/saveButton"

@@ -40,14 +40,11 @@ public class ListViewFragment extends android.support.v4.app.Fragment {
         factory = new ParseQueryAdapter.QueryFactory<Debt>() {
             public ParseQuery<Debt> create() {
                 ParseQuery<Debt> query = Debt.getQuery();
-                query.orderByDescending("createdAt");
+                query.orderByAscending("createdAt");
                 query.fromLocalDatastore();
                 return query;
             }
         };
-
-        // Set up the adapter
-        debtListAdapter = new DebtListAdapter(getActivity(), factory);
     }
 
     @SuppressLint("InflateParams")
@@ -62,6 +59,9 @@ public class ListViewFragment extends android.support.v4.app.Fragment {
         debtListView = (ListView) root.findViewById(android.R.id.list);
         noDebtsView = (LinearLayout) root.findViewById(R.id.no_debts_view);
         debtListView.setEmptyView(noDebtsView);
+
+        // Set up the adapter
+        debtListAdapter = new DebtListAdapter(getActivity(), factory);
 
         // Attach the query adapter to the view
         debtListView.setAdapter(debtListAdapter);
