@@ -3,6 +3,7 @@ package com.melnykov.fab.sample;
 import android.app.Application;
 
 import com.parse.Parse;
+import com.parse.ParseInstallation;
 import com.parse.ParseObject;
 import com.parse.ParseUser;
 
@@ -22,7 +23,10 @@ public class DebtListApplication extends Application {
 
         // Required - Initialize the Parse SDK
         Parse.initialize(this);
-        ParseUser.enableRevocableSessionInBackground();// TODO: 04/09/2015
+
+        ParseInstallation.getCurrentInstallation().saveInBackground();
+
+        ParseUser.enableRevocableSessionInBackground();// TODO: 04/09/2015 check if needed
 
         Parse.setLogLevel(Parse.LOG_LEVEL_DEBUG);
 

@@ -17,8 +17,8 @@ public class DueDateAlarm extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         String uuid = intent.getData().getSchemeSpecificPart();
-        String title = intent.getStringExtra("title");
-        String owner = "michael";// intent.getStringExtra("owner");
+        String title = intent.getStringExtra(Debt.KEY_TITLE);
+        String owner = intent.getStringExtra(Debt.KEY_OWNER);
 
         String firstPart = "Return ";
         String preposition = " to ";
@@ -42,10 +42,11 @@ public class DueDateAlarm extends BroadcastReceiver {
      */
     public void createNotification(Context context, String title, String text, String alert, String uuid) {
         Intent intent = new Intent(context, EditDebtActivity.class);
+//        intent.setFlags(/*Intent.FLAG_ACTIVITY_REORDER_TO_FRONT*/ /*Intent.FLAG_ACTIVITY_SINGLE_TOP | */Intent.FLAG_ACTIVITY_CLEAR_TOP);
         int alarmId = uuid.hashCode();
-        intent.putExtra("ID", uuid);
+        intent.putExtra(Debt.KEY_UUID, uuid);
         PendingIntent notificationIntent = PendingIntent.getActivity(context, 0, intent
-                , 0);
+                , PendingIntent.FLAG_UPDATE_CURRENT);
         Notification notification = new Notification.Builder(context)
                 .setContentTitle(title)
                 .setTicker(alert)

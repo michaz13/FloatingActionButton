@@ -15,7 +15,7 @@
         android:id="@+id/debt_title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:hint="Title"
+        android:hint="@string/debt_title_hint"
         android:layout_weight="1"
         android:paddingTop="30dp" >
     </EditText>
@@ -24,16 +24,22 @@
         android:id="@+id/debt_owner"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:hint="Owner"
+        android:hint="@string/debt_owner_hint"
         android:layout_weight="1"
         android:paddingTop="30dp" >
     </EditText>
+
+    <SearchView
+        android:id="@+id/debt_contact_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </SearchView>
 
     <EditText
         android:id="@+id/debt_desc"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:hint="Description"
+        android:hint="@string/debt_desc_hint"
         android:layout_weight="1"
         android:paddingTop="30dp" >
     </EditText>
@@ -41,21 +47,21 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:orientation="horizontal"
         android:baselineAligned="false"
-        android:layout_weight="1"
         android:gravity="bottom">
 
         <CheckBox
-            android:id="@+id/remindCheckBox"
+            android:id="@+id/remind_checkbox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:checked="false"
-            android:text="Reminder" />
+            android:text="@string/remindCheckBox_text" />
 
         <Button
-            android:id="@+id/remindButton"
+            android:id="@+id/remind_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="5"
@@ -66,13 +72,13 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/saveButton"
+        android:id="@+id/save_button"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/save" />
 
     <Button
-        android:id="@+id/deleteButton"
+        android:id="@+id/delete_button"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/delete"

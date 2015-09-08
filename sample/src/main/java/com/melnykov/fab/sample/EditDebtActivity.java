@@ -3,30 +3,39 @@ package com.melnykov.fab.sample;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.app.SearchManager;
+import android.app.SearchableInfo;
+import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.parse.GetCallback;
 import com.parse.ParseException;
+import com.parse.ParseInstallation;
+import com.parse.ParsePush;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
-import java.util.Calendar;
 import java.util.Date;
 
 
 public class EditDebtActivity extends AppCompatActivity {
+
+    private static final String ALARM_SCHEME = "timer:";
 
     private Button saveButton;
     private Button deleteButton;
@@ -34,6 +43,7 @@ public class EditDebtActivity extends AppCompatActivity {
     private CheckBox remindCheckBox;
     private EditText debtTitleText;
     private EditText debtOwnerText;
+    private SearchView contactSearchView;
     private EditText debtDescText;
 
     private Debt debt;
@@ -45,17 +55,18 @@ public class EditDebtActivity extends AppCompatActivity {
         setContentView(R.layout.activity_edit_debt);
 
         // Fetch the debtId from the Extra data
-        if (getIntent().hasExtra("ID")) {
-            debtId = getIntent().getExtras().getString("ID");
+        if (getIntent().hasExtra(Debt.KEY_UUID)) {
+            debtId = getIntent().getExtras().getString(Debt.KEY_UUID);
         }
 
         debtTitleText = (EditText) findViewById(R.id.debt_title);
         debtOwnerText = (EditText) findViewById(R.id.debt_owner);
+        contactSearchView = (SearchView) findViewById(R.id.debt_contact_search);
         debtDescText = (EditText) findViewById(R.id.debt_desc);
-        saveButton = (Button) findViewById(R.id.saveButton);
-        deleteButton = (Button) findViewById(R.id.deleteButton);
-        remindButton = (Button) findViewById(R.id.remindButton);
-        remindCheckBox = (CheckBox) findViewById(R.id.remindCheckBox);
+        saveButton = (Button) findViewById(R.id.save_button);
+        deleteButton = (Button) findViewById(R.id.delete_button);
+        remindButton = (Button) findViewById(R.id.remind_button);
+        remindCheckBox = (CheckBox) findViewById(R.id.remind_checkbox);
 
         // TODO: 07/09/2015 transfer Debt serializable ?
         if (debtId == null) {
@@ -64,7 +75,7 @@ public class EditDebtActivity extends AppCompatActivity {
         } else {
             ParseQuery<Debt> query = Debt.getQuery();
             query.fromLocalDatastore();
-            query.whereEqualTo("uuid", debtId);
+            query.whereEqualTo(Debt.KEY_UUID, debtId);
             query.getFirstInBackground(new GetCallback<Debt>() {
 
                 @Override
@@ -73,6 +84,7 @@ public class EditDebtActivity extends AppCompatActivity {
                         debt = object;
                         debtTitleText.setText(debt.getTitle());
                         debtOwnerText.setText(debt.getOwner());
+                        contactSearchView.setQuery(debt.getOwner(), false);
                         debtDescText.setText(debt.getDescription());
                         Date dueDate = debt.getDueDate();
                         if (dueDate != null) {
@@ -114,6 +126,7 @@ public class EditDebtActivity extends AppCompatActivity {
                                         setAlarm(debt);
                                     }
                                     setResult(Activity.RESULT_OK);
+                                    Activity parent = getParent();// TODO: 08/09/2015 check parent existence
                                     finish();
                                 } else {
                                     Toast.makeText(getApplicationContext(),
@@ -168,6 +181,44 @@ public class EditDebtActivity extends AppCompatActivity {
                         .show();
             }
         });
+
+        setupSearchView();
+    }
+/*
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() ==  android.R.id.home) {
+            NavUtils.navigateUpFromSameTask(this);
+        }
+        return super.onOptionsItemSelected(item);
+    }*/// REMOVE: 08/09/2015
+
+    private void setupSearchView() {
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchableInfo searchableInfo = searchManager.getSearchableInfo(getComponentName());
+        contactSearchView.setSearchableInfo(searchableInfo);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        if (ContactsContract.Intents.SEARCH_SUGGESTION_CLICKED.equals(intent.getAction())) {
+            //handles suggestion clicked query
+            String displayName = getDisplayNameForContact(intent);
+            debtOwnerText.setText(displayName);
+        } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            // handles a search query
+            String query = intent.getStringExtra(SearchManager.QUERY);
+//            debtOwnerText.setText("should search for query: '" + query + "'...");// TODO: 08/09/2015 ?
+        }
+    }
+
+    private String getDisplayNameForContact(Intent intent) {
+        Cursor phoneCursor = getContentResolver().query(intent.getData(), null, null, null, null);
+        phoneCursor.moveToFirst();
+        int idDisplayName = phoneCursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
+        String name = phoneCursor.getString(idDisplayName);
+        phoneCursor.close();
+        return name;
     }
 
     /**
@@ -178,13 +229,13 @@ public class EditDebtActivity extends AppCompatActivity {
     private void setAlarm(Debt debt) {
         long timeInMillis = debt.getDueDate().getTime();
         Intent alertIntent = new Intent(this, DueDateAlarm.class);
-        String uuid = debt.getUuidString();
-        int alarmId = uuid.hashCode();
+        String schemeSpecificPart = debt.getUuidString();
+        int alarmId = schemeSpecificPart.hashCode();
 
-        alertIntent.putExtra("title", debt.getTitle());
-        alertIntent.putExtra("owner", debt.getOwner());
+        alertIntent.putExtra(Debt.KEY_TITLE, debt.getTitle());
+        alertIntent.putExtra(Debt.KEY_OWNER, debt.getOwner());
 
-        alertIntent.setData(Uri.parse("timer:" + uuid));
+        alertIntent.setData(Uri.parse(ALARM_SCHEME + schemeSpecificPart));
 
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
         am.set(AlarmManager.RTC_WAKEUP, timeInMillis, PendingIntent.getBroadcast(
@@ -206,9 +257,10 @@ public class EditDebtActivity extends AppCompatActivity {
      */
     private void cancelAlarm(Debt debt) {
         Intent alertIntent = new Intent(this, DueDateAlarm.class);
-        int alarmId = debt.getUuidString().hashCode();
+        String schemeSpecificPart = debt.getUuidString();
+        int alarmId = schemeSpecificPart.hashCode();
 
-        alertIntent.setData(Uri.parse("timer:" + alarmId));
+        alertIntent.setData(Uri.parse(ALARM_SCHEME + schemeSpecificPart));
 
         AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
         am.cancel(PendingIntent.getBroadcast(this, alarmId, alertIntent, PendingIntent.FLAG_UPDATE_CURRENT));

@@ -112,7 +112,7 @@ public class ListViewFragment extends android.support.v4.app.Fragment {
     // Helper methods: -----------------------------------------------------------------------------
     public void openEditView(Debt debt) {
         Intent i = new Intent(getActivity().getApplicationContext(), EditDebtActivity.class);
-        i.putExtra("ID", debt.getUuidString());
+        i.putExtra("uuid", debt.getUuidString());
         startActivityForResult(i, MainActivity.EDIT_ACTIVITY_CODE);
     }
 
