@@ -40,6 +40,13 @@ import java.util.Date;
 
 public class EditDebtActivity extends AppCompatActivity {
 
+    class MyObj{// REMOVE: 10/09/2015
+        public String k;
+
+        public MyObj(String k) {
+            this.k = k;
+        }
+    }
     private static final String ALARM_SCHEME = "timer:";
 
     private Button saveButton;
@@ -48,6 +55,7 @@ public class EditDebtActivity extends AppCompatActivity {
     private CheckBox remindCheckBox;
     private EditText debtTitleText;
     private EditText debtOwnerText;
+    private EditText debtPhoneText;
     private SearchView contactSearchView;
     private EditText debtDescText;
 
@@ -72,6 +80,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
         debtTitleText = (EditText) findViewById(R.id.debt_title);
         debtOwnerText = (EditText) findViewById(R.id.debt_owner);
+        debtPhoneText = (EditText) findViewById(R.id.debt_phone);
         contactSearchView = (SearchView) findViewById(R.id.debt_contact_search);
         debtDescText = (EditText) findViewById(R.id.debt_desc);
         saveButton = (Button) findViewById(R.id.save_button);
@@ -96,6 +105,7 @@ public class EditDebtActivity extends AppCompatActivity {
                         debt = object;
                         debtTitleText.setText(debt.getTitle());
                         debtOwnerText.setText(debt.getOwner());
+                        debtPhoneText.setText(debt.getPhone());
                         contactSearchView.setQuery(debt.getOwner(), false);
                         debtDescText.setText(debt.getDescription());
                         Date dueDate = debt.getDueDate();
@@ -117,6 +127,7 @@ public class EditDebtActivity extends AppCompatActivity {
             public void onClick(View v) {
                 debt.setTitle(debtTitleText.getText().toString());
                 debt.setOwner(debtOwnerText.getText().toString());
+                debt.setPhone(debtPhoneText.getText().toString());
                 debt.setDescription(debtDescText.getText().toString());
                 if (!remindCheckBox.isChecked()) {
                     // In case the date was already set by the dialog
@@ -135,9 +146,11 @@ public class EditDebtActivity extends AppCompatActivity {
                                 }
                                 if (e == null) {
                                     ParsePush push = new ParsePush();
-                                    push.setChannel(ParseUser.getCurrentUser().getString("phone"));
+                                    push.setChannel("t"+debt.getPhone());
                                     Gson gson = new Gson(); // Or use new GsonBuilder().create();
-                                    push.setMessage(gson.toJson(debt)); // todo check if data changed
+                                    MyObj o = new MyObj("123");
+//                                    debt.
+                                    push.setMessage(gson.toJson(o));///**/); // todo check if data changed
                                     push.sendInBackground(new SendCallback() {
                                         @Override
                                         public void done(ParseException e) {
@@ -233,6 +246,8 @@ public class EditDebtActivity extends AppCompatActivity {
             //handles suggestion clicked query
             String displayName = getDisplayNameForContact(intent);
             debtOwnerText.setText(displayName);
+            String phone = getPhoneNumber(displayName);
+            debtPhoneText.setText(phone);
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             // handles a search query
             String query = intent.getStringExtra(SearchManager.QUERY);
@@ -247,6 +262,21 @@ public class EditDebtActivity extends AppCompatActivity {
         String name = phoneCursor.getString(idDisplayName);
         phoneCursor.close();
         return name;
+    }
+
+    public String getPhoneNumber(String name) {
+        String ret = null;
+        String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " like'%" + name + "%'";
+        String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER};
+        Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                projection, selection, null, null);
+        if (c.moveToFirst()) {
+            ret = c.getString(0);
+        }
+        c.close();
+        if (ret == null)
+            ret = "Unsaved";
+        return ret;
     }
 
     /**

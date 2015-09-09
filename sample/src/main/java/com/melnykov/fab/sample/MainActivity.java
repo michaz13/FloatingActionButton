@@ -285,15 +285,15 @@ public class MainActivity extends AppCompatActivity {
                 // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
                 if (data != null && data.hasExtra(Debt.KEY_TAB_TAG)) {
                     String tabTag = data.getStringExtra(Debt.KEY_TAB_TAG);
-                    if (tabTag.equals(Debt.I_OWE_TAG)) {
+                    if (tabTag.equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
                         iOweViewFragmentWithTag.updateView();
-                    } else {
+                    } else if (oweMeViewFragmentWithTag != null) {
                         iOweViewFragmentWithTag.updateView();
                     }
                 }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
-                if (!wasSubscribedToPush) {
-                    ParsePush.subscribeInBackground(ParseUser.getCurrentUser().getString("name"));
+                if (!wasSubscribedToPush) {// TODO: 09/09/2015 check phone
+                    ParsePush.subscribeInBackground("t" + ParseUser.getCurrentUser().getString("phone"));
                     wasSubscribedToPush = true;
                 }
                 // If the user is new, sync data to Parse,
@@ -361,9 +361,9 @@ public class MainActivity extends AppCompatActivity {
                                             // Let adapter know to update view
                                             if (!isFinishing()) {
                                                 // REMOVE: 07/09/2015 debtListAdapter.notifyDataSetChanged();
-                                                if (debt.getTabTag().equals(Debt.I_OWE_TAG)) {
+                                                if (debt.getTabTag().equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
                                                     iOweViewFragmentWithTag.updateView();
-                                                } else {
+                                                } else if (oweMeViewFragmentWithTag != null) {
                                                     oweMeViewFragmentWithTag.updateView();
                                                 }
                                             }
@@ -427,10 +427,10 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             }
                                             // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
-                                            if(iOweViewFragmentWithTag != null){
+                                            if (iOweViewFragmentWithTag != null) {
                                                 iOweViewFragmentWithTag.updateView();
                                             }
-                                            if(oweMeViewFragment != null){
+                                            if (oweMeViewFragment != null) {
                                                 oweMeViewFragment.updateView();
                                             }
                                         }

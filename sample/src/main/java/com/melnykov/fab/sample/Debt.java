@@ -5,6 +5,8 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
+import org.json.JSONObject;
+
 import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
@@ -12,11 +14,6 @@ import java.util.UUID;
 @ParseClassName("Debt")
 public class Debt extends ParseObject implements Serializable{
 
-    public class Contact{
-        private String name;
-        private String phone;
-
-    }
     public static final String KEY_UUID = "uuid";
     public static final String KEY_IS_DRAFT = "isDraft";
     public static final String KEY_AUTHOR = "author";
@@ -24,6 +21,7 @@ public class Debt extends ParseObject implements Serializable{
     public static final String KEY_DESCRIPTION = "description";
     public static final String KEY_TITLE = "title";
     public static final String KEY_OWNER = "owner";
+    public static final String KEY_PHONE = "phone";
     public static final String KEY_TAB_TAG = "tabTag";
     public static final String I_OWE_TAG = "iOwe";
     public static final String OWE_ME_TAG = "oweMe";
@@ -60,6 +58,18 @@ public class Debt extends ParseObject implements Serializable{
             put(KEY_OWNER, owner);
         } else {
             remove(KEY_OWNER);
+        }
+    }
+
+    public String getPhone() {
+        return getString(KEY_PHONE);
+    }
+
+    public void setPhone(String phone) {
+        if (phone != null) {
+            put(KEY_PHONE, phone);
+        } else {
+            remove(KEY_PHONE);
         }
     }
 

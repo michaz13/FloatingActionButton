@@ -30,18 +30,29 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
 
     @Override
     public void onPushReceive(Context context, Intent intent) {
-
-        JSONObject pushData;
+        JSONObject data;
+        String strData;
+        EditDebtActivity.MyObj debt=null;
         Gson gson = new Gson(); // Or use new GsonBuilder().create();
-        Debt debt = gson.fromJson(intent.getStringExtra(MyReceiver.KEY_PUSH_DATA), Debt.class); // deserializes json into target2
+        try {
+            data = new JSONObject(intent.getStringExtra(MyReceiver.KEY_PUSH_DATA));
+            strData = data.getString("alert");
+            debt = gson.fromJson(strData, EditDebtActivity.MyObj.class); // deserializes json into target2
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return;
+/*        if(debt == null){
+            return;
+        }
         String alert = "Friend's debt created";
 
         if (debt.getTabTag().equals(Debt.OWE_ME_TAG)) {
             createNotification(context, "You owe "+ debt.getOwner(), debt.getTitle(), alert, debt.getUuidString());
         }
         else {
-            createNotification(context, debt.getOwner() + "owes you", debt.getTitle(), alert, debt.getUuidString());
-        }
+            createNotification(context, debt.getOwner() + " owes you", debt.getTitle(), alert, debt.getUuidString());
+        }*/
     }
     /**
      * Creates and shows notification to the user.
@@ -63,7 +74,7 @@ public class MyReceiver extends ParsePushBroadcastReceiver {
                 .setContentTitle(title)
                 .setTicker(alert)
                 .setContentText(text)
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.drawable.app_logo)
                 .setContentIntent(notificationIntent)
                 .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
                 .addAction(0, "Call ...", notificationIntent) //todo contact's phone
