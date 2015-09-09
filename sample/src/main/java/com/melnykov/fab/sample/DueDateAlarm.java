@@ -19,13 +19,18 @@ public class DueDateAlarm extends BroadcastReceiver {
         String uuid = intent.getData().getSchemeSpecificPart();
         String title = intent.getStringExtra(Debt.KEY_TITLE);
         String owner = intent.getStringExtra(Debt.KEY_OWNER);
+        String tabTag = intent.getStringExtra(Debt.KEY_TAB_TAG);
 
-        String firstPart = "Return ";
-        String preposition = " to ";
-//        if (isFromOweMeTable(alarmId)) {
-//            firstPart = "Get your ";
-//            preposition = " from ";
-//        }// TODO: 07/09/2015 owe me
+        String firstPart;
+        String preposition;
+        if (tabTag.equals(Debt.OWE_ME_TAG)) {
+            firstPart = "Get your ";
+            preposition = " from ";
+        }
+        else {
+            firstPart = "Return ";
+            preposition = " to ";
+        }
 
         // Raise the notification about the debt
         createNotification(context, firstPart + title, preposition + owner, title, uuid);

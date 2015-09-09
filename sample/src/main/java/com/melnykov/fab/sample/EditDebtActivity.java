@@ -48,6 +48,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
     private Debt debt;
     private String debtId;
+    private String debtTabTag;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +58,11 @@ public class EditDebtActivity extends AppCompatActivity {
         // Fetch the debtId from the Extra data
         if (getIntent().hasExtra(Debt.KEY_UUID)) {
             debtId = getIntent().getExtras().getString(Debt.KEY_UUID);
+        }
+
+        // Fetch the debtId from the Extra data
+        if (getIntent().hasExtra(Debt.KEY_TAB_TAG)) {
+            debtTabTag = getIntent().getExtras().getString(Debt.KEY_TAB_TAG);
         }
 
         debtTitleText = (EditText) findViewById(R.id.debt_title);
@@ -72,6 +78,7 @@ public class EditDebtActivity extends AppCompatActivity {
         if (debtId == null) {
             debt = new Debt();
             debt.setUuidString();
+            debt.setTabTag(debtTabTag);
         } else {
             ParseQuery<Debt> query = Debt.getQuery();
             query.fromLocalDatastore();
@@ -126,7 +133,7 @@ public class EditDebtActivity extends AppCompatActivity {
                                         setAlarm(debt);
                                     }
                                     setResult(Activity.RESULT_OK);
-                                    Activity parent = getParent();// TODO: 08/09/2015 check parent existence
+//                                    Activity parent = getParent();// TODO: 08/09/2015 check parent existence
                                     finish();
                                 } else {
                                     Toast.makeText(getApplicationContext(),
@@ -234,6 +241,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
         alertIntent.putExtra(Debt.KEY_TITLE, debt.getTitle());
         alertIntent.putExtra(Debt.KEY_OWNER, debt.getOwner());
+        alertIntent.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
 
         alertIntent.setData(Uri.parse(ALARM_SCHEME + schemeSpecificPart));
 

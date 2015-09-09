@@ -18,7 +18,21 @@ public class Debt extends ParseObject {
     public static final String KEY_DESCRIPTION = "description";
     public static final String KEY_TITLE = "title";
     public static final String KEY_OWNER = "owner";
+    public static final String KEY_TAB_TAG = "tabTag";
+    public static final String I_OWE_TAG = "iOwe";
+    public static final String OWE_ME_TAG = "oweMe";
 
+    public String getTabTag() {
+        return getString(KEY_TAB_TAG);
+    }
+
+    public void setTabTag(String tabTag) {
+        if (tabTag != null) {
+            put(KEY_TAB_TAG, tabTag);
+        } else {
+            remove(KEY_TAB_TAG);
+        }
+    }
     public String getTitle() {
         return getString(KEY_TITLE);
     }

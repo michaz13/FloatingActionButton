@@ -26,7 +26,7 @@ public class DebtListApplication extends Application {
 
         ParseInstallation.getCurrentInstallation().saveInBackground();
 
-        ParseUser.enableRevocableSessionInBackground();// TODO: 04/09/2015 check if needed
+//        ParseUser.enableRevocableSessionInBackground();// TODO: 04/09/2015 check if needed
 
         Parse.setLogLevel(Parse.LOG_LEVEL_DEBUG);
 

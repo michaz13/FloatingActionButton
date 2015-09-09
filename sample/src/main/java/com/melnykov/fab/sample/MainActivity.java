@@ -10,6 +10,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -21,7 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
-import com.parse.Parse;
 import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -45,15 +45,19 @@ public class MainActivity extends AppCompatActivity {
     private static final String ALARM_SCHEME = "timer:";
 
     private static final boolean SHOW_LOGIN_ON_ERROR = true;
-    private static final boolean SUBSCRIBE_TO_PARSE_CHANNEL = true;
 
     private boolean _isShowLoginOnFail = false;
     private boolean _wasSignupShowen = false;
 
     private int numPinned;//// TODO: 05/09/2015 remove
     private int numSaved;//// TODO: 05/09/2015 remove
-    ListViewFragment listIOweViewFragment;
-    ListViewFragment listOweMeViewFragment;
+
+    ListViewFragment iOweViewFragment;
+    ListViewFragment oweMeViewFragment;
+
+    ListViewFragment iOweViewFragmentWithTag;
+    ListViewFragment oweMeViewFragmentWithTag;
+    private boolean wasSubscribedToPush = false;
 
 
     @Override
@@ -74,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         // Check if we have a real user
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             // Sync data to Parse
-            syncDebtsToParse(!SHOW_LOGIN_ON_ERROR, !SUBSCRIBE_TO_PARSE_CHANNEL);
+            syncDebtsToParse(!SHOW_LOGIN_ON_ERROR);
             // Update the logged in label info
             updateLoggedInInfo();
         }
@@ -93,8 +97,6 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressWarnings("deprecation")
     private void initActionBar() {
-        listIOweViewFragment = new ListViewFragment();
-        listOweMeViewFragment = new ListViewFragment();
         if (getSupportActionBar() != null) {
             ActionBar actionBar = getSupportActionBar();
             actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
@@ -103,10 +105,13 @@ public class MainActivity extends AppCompatActivity {
                     .setTabListener(new ActionBar.TabListener() {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-                            if (listIOweViewFragment == null) {
-                                listIOweViewFragment = new ListViewFragment();
+                            if (iOweViewFragment == null || iOweViewFragmentWithTag == null) {
+                                iOweViewFragment = new ListViewFragment();
+                                fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
+                                iOweViewFragmentWithTag = (ListViewFragment) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
+                            } else {
+                                fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
                             }
-                            fragmentTransaction.replace(android.R.id.content, listIOweViewFragment);
                         }
 
                         @Override
@@ -122,10 +127,13 @@ public class MainActivity extends AppCompatActivity {
                     .setTabListener(new ActionBar.TabListener() {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-                            if (listOweMeViewFragment == null) {
-                                listOweMeViewFragment = new ListViewFragment();
+                            if (oweMeViewFragment == null || oweMeViewFragmentWithTag == null) {
+                                oweMeViewFragment = new ListViewFragment();
+                                fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
+                                oweMeViewFragmentWithTag = (ListViewFragment) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
+                            } else {
+                                fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
                             }
-                            fragmentTransaction.replace(android.R.id.content, listOweMeViewFragment);
                         }
 
                         @Override
@@ -158,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_sync:
-                syncDebtsToParse(SHOW_LOGIN_ON_ERROR, !SUBSCRIBE_TO_PARSE_CHANNEL);
+                syncDebtsToParse(SHOW_LOGIN_ON_ERROR);
                 break;
 
             case R.id.action_logout:
@@ -169,14 +177,19 @@ public class MainActivity extends AppCompatActivity {
                 openLoginView();
                 break;
             case R.id.about:
-                ParsePush push = new ParsePush();
-                push.setChannel(ParseUser.getCurrentUser().getEmail());
+                ParsePush push = new ParsePush();// TODO: 09/09/2015 move to EditDebtActivity
+                push.setChannel(ParseUser.getCurrentUser().getString("name"));
                 push.setMessage("The Giants just scored! It's now 2-2 against the Mets.");
                 push.sendInBackground(new SendCallback() {
                     @Override
                     public void done(ParseException e) {
-                        if(e==null){
+                        if (e == null) {
 
+                        }
+                        else{
+                            Toast.makeText(getApplicationContext(),
+                                    "Push not sent: "+e.getMessage(),
+                                    Toast.LENGTH_LONG).show();
                         }
                     }
                 });
@@ -287,12 +300,24 @@ public class MainActivity extends AppCompatActivity {
             if (requestCode == EDIT_ACTIVITY_CODE || requestCode == EDIT_ACTIVITY_FRAGMENT_CODE) {
                 // Coming back from the edit view, update the view
                 // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
-                listIOweViewFragment.updateView();
+                if (data != null && data.hasExtra(Debt.KEY_TAB_TAG)) {
+                    String tabTag = data.getStringExtra(Debt.KEY_TAB_TAG);
+                    if(tabTag.equals(Debt.I_OWE_TAG)){
+                        iOweViewFragmentWithTag.updateView();
+                    }
+                    else{
+                        iOweViewFragmentWithTag.updateView();
+                    }
+                }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
+                if (!wasSubscribedToPush) {
+                    ParsePush.subscribeInBackground(ParseUser.getCurrentUser().getString("name"));
+                    wasSubscribedToPush = true;
+                }
                 // If the user is new, sync data to Parse,
                 // else get the current list from Parse
-                syncDebtsToParse(SHOW_LOGIN_ON_ERROR, SUBSCRIBE_TO_PARSE_CHANNEL);// FIXME: 06/09/2015 add if
                 if (ParseUser.getCurrentUser().isNew()) {
+                    syncDebtsToParse(SHOW_LOGIN_ON_ERROR);// FIXME: 06/09/2015 add if
                 } else {
                     loadFromParse();
                 }
@@ -313,16 +338,20 @@ public class MainActivity extends AppCompatActivity {
         // Create a new anonymous user
         ParseAnonymousUtils.logIn(null);// FIXME: 02/09/2015
         // Clear the view
-        // REMOVE: 07/09/2015 debtListAdapter.clear();
-        listIOweViewFragment.clearView();
+        if (iOweViewFragmentWithTag != null) {
+            iOweViewFragmentWithTag.clearView();
+        }
+        if (oweMeViewFragmentWithTag != null) {
+            oweMeViewFragmentWithTag.clearView();
+        }
         // Unpin all the current objects
         ParseObject.unpinAllInBackground(DebtListApplication.DEBT_GROUP_NAME);
-        cancelAllAlarmsOnPinnedObjects();
+        cancelAllAlarmsOnPinnedObjects();// TODO: 09/09/2015 not only pinned ?
         // Update the logged in label info
         updateLoggedInInfo();
     }
 
-    private void syncDebtsToParse(final boolean isShowLoginOnFail, final boolean isSubscribeToChannel) {
+    private void syncDebtsToParse(final boolean isShowLoginOnFail) {
         // We could use saveEventually here, but we want to have some UI
         // around whether or not the draft has been saved to Parse
         _wasSignupShowen = false;// FIXME: 06/09/2015 ?
@@ -347,13 +376,10 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void done(ParseException e) {
                                         if (e == null) {
-                                            if (isSubscribeToChannel) {
-                                                ParsePush.subscribeInBackground(ParseUser.getCurrentUser().getEmail());
-                                            }
                                             // Let adapter know to update view
                                             if (!isFinishing()) {
                                                 // REMOVE: 07/09/2015 debtListAdapter.notifyDataSetChanged();
-                                                listIOweViewFragment.updateView();
+                                                iOweViewFragmentWithTag.updateView();
                                             }
                                         } else {
                                             if (!isShowLoginOnFail) {
@@ -415,7 +441,8 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             }
                                             // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
-                                            listIOweViewFragment.updateView();
+                                            iOweViewFragment.updateView();
+//              todo                              ViewFragment.updateView();
                                         }
                                     } else {
                                         Log.i("DebtListActivity",
@@ -446,6 +473,7 @@ public class MainActivity extends AppCompatActivity {
 
         alertIntent.putExtra(Debt.KEY_TITLE, debt.getTitle());
         alertIntent.putExtra(Debt.KEY_OWNER, debt.getOwner());
+        alertIntent.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
 
         alertIntent.setData(Uri.parse(ALARM_SCHEME + schemeSpecificPart));
 
