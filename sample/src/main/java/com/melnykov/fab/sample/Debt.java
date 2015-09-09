@@ -5,12 +5,18 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
 @ParseClassName("Debt")
-public class Debt extends ParseObject {
+public class Debt extends ParseObject implements Serializable{
 
+    public class Contact{
+        private String name;
+        private String phone;
+
+    }
     public static final String KEY_UUID = "uuid";
     public static final String KEY_IS_DRAFT = "isDraft";
     public static final String KEY_AUTHOR = "author";

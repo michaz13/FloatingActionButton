@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
+import com.google.gson.Gson;
 import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
@@ -29,7 +30,11 @@ import com.parse.ParsePush;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.parse.SaveCallback;
+import com.parse.SendCallback;
 
+import org.json.JSONObject;
+
+import java.io.Serializable;
 import java.util.Date;
 
 
@@ -129,6 +134,22 @@ public class EditDebtActivity extends AppCompatActivity {
                                     return;
                                 }
                                 if (e == null) {
+                                    ParsePush push = new ParsePush();
+                                    push.setChannel(ParseUser.getCurrentUser().getString("phone"));
+                                    Gson gson = new Gson(); // Or use new GsonBuilder().create();
+                                    push.setMessage(gson.toJson(debt)); // todo check if data changed
+                                    push.sendInBackground(new SendCallback() {
+                                        @Override
+                                        public void done(ParseException e) {
+                                            if (e == null) {
+
+                                            } else {
+                                                Toast.makeText(getApplicationContext(),
+                                                        "Push not sent: " + e.getMessage(),
+                                                        Toast.LENGTH_LONG).show();
+                                            }
+                                        }
+                                    });
                                     if (debt.getDueDate() != null) {
                                         setAlarm(debt);
                                     }

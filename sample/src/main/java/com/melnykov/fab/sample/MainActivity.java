@@ -10,7 +10,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -52,11 +51,11 @@ public class MainActivity extends AppCompatActivity {
     private int numPinned;//// TODO: 05/09/2015 remove
     private int numSaved;//// TODO: 05/09/2015 remove
 
-    ListViewFragment iOweViewFragment;
-    ListViewFragment oweMeViewFragment;
+    ListViewFragmentIOwe iOweViewFragment;
+    ListViewFragmentOweMe oweMeViewFragment;
 
-    ListViewFragment iOweViewFragmentWithTag;
-    ListViewFragment oweMeViewFragmentWithTag;
+    ListViewFragmentIOwe iOweViewFragmentWithTag;
+    ListViewFragmentOweMe oweMeViewFragmentWithTag;
     private boolean wasSubscribedToPush = false;
 
 
@@ -106,9 +105,9 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
                             if (iOweViewFragment == null || iOweViewFragmentWithTag == null) {
-                                iOweViewFragment = new ListViewFragment();
+                                iOweViewFragment = new ListViewFragmentIOwe();
                                 fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
-                                iOweViewFragmentWithTag = (ListViewFragment) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
+                                iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
                             } else {
                                 fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
                             }
@@ -128,9 +127,9 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
                             if (oweMeViewFragment == null || oweMeViewFragmentWithTag == null) {
-                                oweMeViewFragment = new ListViewFragment();
+                                oweMeViewFragment = new ListViewFragmentOweMe();
                                 fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
-                                oweMeViewFragmentWithTag = (ListViewFragment) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
+                                oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
                             } else {
                                 fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
                             }
@@ -177,22 +176,6 @@ public class MainActivity extends AppCompatActivity {
                 openLoginView();
                 break;
             case R.id.about:
-                ParsePush push = new ParsePush();// TODO: 09/09/2015 move to EditDebtActivity
-                push.setChannel(ParseUser.getCurrentUser().getString("name"));
-                push.setMessage("The Giants just scored! It's now 2-2 against the Mets.");
-                push.sendInBackground(new SendCallback() {
-                    @Override
-                    public void done(ParseException e) {
-                        if (e == null) {
-
-                        }
-                        else{
-                            Toast.makeText(getApplicationContext(),
-                                    "Push not sent: "+e.getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
                 TextView content = (TextView) getLayoutInflater().inflate(R.layout.about_view, null);
                 content.setMovementMethod(LinkMovementMethod.getInstance());
 
@@ -302,10 +285,9 @@ public class MainActivity extends AppCompatActivity {
                 // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
                 if (data != null && data.hasExtra(Debt.KEY_TAB_TAG)) {
                     String tabTag = data.getStringExtra(Debt.KEY_TAB_TAG);
-                    if(tabTag.equals(Debt.I_OWE_TAG)){
+                    if (tabTag.equals(Debt.I_OWE_TAG)) {
                         iOweViewFragmentWithTag.updateView();
-                    }
-                    else{
+                    } else {
                         iOweViewFragmentWithTag.updateView();
                     }
                 }
@@ -379,7 +361,11 @@ public class MainActivity extends AppCompatActivity {
                                             // Let adapter know to update view
                                             if (!isFinishing()) {
                                                 // REMOVE: 07/09/2015 debtListAdapter.notifyDataSetChanged();
-                                                iOweViewFragmentWithTag.updateView();
+                                                if (debt.getTabTag().equals(Debt.I_OWE_TAG)) {
+                                                    iOweViewFragmentWithTag.updateView();
+                                                } else {
+                                                    oweMeViewFragmentWithTag.updateView();
+                                                }
                                             }
                                         } else {
                                             if (!isShowLoginOnFail) {
@@ -441,8 +427,12 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             }
                                             // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
-                                            iOweViewFragment.updateView();
-//              todo                              ViewFragment.updateView();
+                                            if(iOweViewFragmentWithTag != null){
+                                                iOweViewFragmentWithTag.updateView();
+                                            }
+                                            if(oweMeViewFragment != null){
+                                                oweMeViewFragment.updateView();
+                                            }
                                         }
                                     } else {
                                         Log.i("DebtListActivity",

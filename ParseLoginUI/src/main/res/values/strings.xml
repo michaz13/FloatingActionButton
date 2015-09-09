@@ -11,7 +11,8 @@
     <string name="com_parse_ui_twitter_login_button_label">Log in with Twitter</string>
     <string name="com_parse_ui_email_input_hint">Email</string>
     <string name="com_parse_ui_confirm_password_input_hint">Re-enter password</string>
-    <string name="com_parse_ui_name_input_hint">Name</string>
+    <string name="com_parse_ui_name_input_hint">Full name</string>
+    <string name="com_parse_ui_phone_input_hint">Phone number</string>
     <string name="com_parse_ui_create_account_button_label">Create account</string>
     <string name="com_parse_ui_no_username_toast">Please enter your username</string>
     <string name="com_parse_ui_no_password_toast">Please enter your password</string>
@@ -32,6 +33,7 @@
     <string name="com_parse_ui_invalid_email_toast">Email is invalid, please correct it and try again</string>
     <string name="com_parse_ui_email_taken_toast">Email is already taken, please reset your password instead</string>
     <string name="com_parse_ui_no_name_toast">Please enter your name</string>
+    <string name="com_parse_ui_no_phone_toast">Please enter your phone</string>
     <string name="com_parse_ui_signup_failed_unknown_toast">Could not sign up, please try again later</string>
     <string name="com_parse_ui_login_help_instructions">Enter your email to recover your password</string>
     <string name="com_parse_ui_login_help_email_input_hint">Email</string>

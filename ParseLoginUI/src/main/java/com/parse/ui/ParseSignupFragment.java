@@ -48,6 +48,7 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
   private EditText confirmPasswordField;
   private EditText emailField;
   private EditText nameField;
+  private EditText phoneField;
   private Button createAccountButton;
   private ParseOnLoginSuccessListener onLoginSuccessListener;
 
@@ -57,6 +58,7 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
   private static final String LOG_TAG = "ParseSignupFragment";
   private static final int DEFAULT_MIN_PASSWORD_LENGTH = 6;
   private static final String USER_OBJECT_NAME_FIELD = "name";
+  private static final String USER_OBJECT_PHONE_FIELD = "phone";
 
   public static ParseSignupFragment newInstance(Bundle configOptions, String username, String password) {
     ParseSignupFragment signupFragment = new ParseSignupFragment();
@@ -91,6 +93,7 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
         .findViewById(R.id.signup_confirm_password_input);
     emailField = (EditText) v.findViewById(R.id.signup_email_input);
     nameField = (EditText) v.findViewById(R.id.signup_name_input);
+    phoneField = (EditText) v.findViewById(R.id.signup_phone_input);
     createAccountButton = (Button) v.findViewById(R.id.create_account);
 
     usernameField.setText(username);
@@ -152,6 +155,11 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
       name = nameField.getText().toString();
     }
 
+    String phone = null;
+    if (phoneField != null) {
+      phone = phoneField.getText().toString();
+    }
+
     if (username.length() == 0) {
       if (config.isParseLoginEmailAsUsername()) {
         showToast(R.string.com_parse_ui_no_email_toast);
@@ -174,6 +182,8 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
       showToast(R.string.com_parse_ui_no_email_toast);
     } else if (name != null && name.length() == 0) {
       showToast(R.string.com_parse_ui_no_name_toast);
+    } else if (phone != null && phone.length() == 0) {
+      showToast(R.string.com_parse_ui_no_phone_toast);
     } else {
       ParseUser user = new ParseUser();
 
@@ -185,6 +195,9 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
       // Set additional custom fields only if the user filled it out
       if (name.length() != 0) {
         user.put(USER_OBJECT_NAME_FIELD, name);
+      }
+      if (phone.length() != 0) {
+        user.put(USER_OBJECT_PHONE_FIELD, phone);
       }
 
       loadingStart();
