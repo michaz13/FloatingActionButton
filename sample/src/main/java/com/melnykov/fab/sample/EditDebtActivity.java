@@ -40,13 +40,14 @@ import java.util.Date;
 
 public class EditDebtActivity extends AppCompatActivity {
 
-    class MyObj{// REMOVE: 10/09/2015
+    class MyObj {// REMOVE: 10/09/2015
         public String k;
 
         public MyObj(String k) {
             this.k = k;
         }
     }
+
     private static final String ALARM_SCHEME = "timer:";
 
     private Button saveButton;
@@ -62,6 +63,7 @@ public class EditDebtActivity extends AppCompatActivity {
     private Debt debt;
     private String debtId;
     private String debtTabTag;
+    private boolean isFromPush;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,8 +90,36 @@ public class EditDebtActivity extends AppCompatActivity {
         remindButton = (Button) findViewById(R.id.remind_button);
         remindCheckBox = (CheckBox) findViewById(R.id.remind_checkbox);
 
-        // TODO: 07/09/2015 transfer Debt serializable ?
-        if (debtId == null) {
+        isFromPush = getIntent().getBooleanExtra("fromPush", false);
+        if (isFromPush) {
+            debt = new Debt();
+            debt.setUuidString();
+
+            ParseQuery<Debt> query = Debt.getQuery();
+            query.whereEqualTo(Debt.KEY_UUID, debtId);
+            query.getFirstInBackground(new GetCallback<Debt>() {
+
+                @Override
+                public void done(Debt other, ParseException e) {
+                    if (!isFinishing()) {
+                        debt.setTabTag(other.getTabTag());
+                        debtTitleText.setText(other.getTitle());
+                        debtOwnerText.setText(other.getOwner());
+                        debtPhoneText.setText(other.getPhone());
+                        contactSearchView.setQuery(other.getOwner(), false);
+                        debtDescText.setText(other.getDescription());
+                        Date dueDate = other.getDueDate();
+                        if (dueDate != null) {
+                            debt.setDueDate(dueDate);
+                            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+                            remindCheckBox.setChecked(true);
+                        }
+                        deleteButton.setVisibility(View.VISIBLE);
+                    }
+                }
+
+            });
+        } else if (debtId == null) {
             debt = new Debt();
             debt.setUuidString();
             debt.setTabTag(debtTabTag);
@@ -145,30 +175,33 @@ public class EditDebtActivity extends AppCompatActivity {
                                     return;
                                 }
                                 if (e == null) {
-                                    ParsePush push = new ParsePush();
-                                    push.setChannel("t"+debt.getPhone());
-                                    Gson gson = new Gson(); // Or use new GsonBuilder().create();
-                                    MyObj o = new MyObj("123");
+                                    if(!isFromPush) {
+                                        ParsePush push = new ParsePush();
+                                        push.setChannel("t" + debt.getPhone());
+                                        Gson gson = new Gson(); // Or use new GsonBuilder().create();
+                                        MyObj o = new MyObj("123");
 //                                    debt.
-                                    push.setMessage(gson.toJson(o));///**/); // todo check if data changed
-                                    push.sendInBackground(new SendCallback() {
-                                        @Override
-                                        public void done(ParseException e) {
-                                            if (e == null) {
+                                        push.setMessage(debt.getUuidString()/*gson.toJson(o)*/);///**/); // todo check if data changed
+                                        push.sendInBackground(new SendCallback() {
+                                            @Override
+                                            public void done(ParseException e) {
+                                                if (e == null) {
 
-                                            } else {
-                                                Toast.makeText(getApplicationContext(),
-                                                        "Push not sent: " + e.getMessage(),
-                                                        Toast.LENGTH_LONG).show();
+                                                } else {
+                                                    Toast.makeText(getApplicationContext(),
+                                                            "Push not sent: " + e.getMessage(),
+                                                            Toast.LENGTH_LONG).show();
+                                                }
                                             }
-                                        }
-                                    });
+                                        });
+                                    }
                                     if (debt.getDueDate() != null) {
                                         setAlarm(debt);
                                     }
                                     setResult(Activity.RESULT_OK);
 //                                    Activity parent = getParent();// TODO: 08/09/2015 check parent existence
                                     finish();
+                                    returnToMain(debt);
                                 } else {
                                     Toast.makeText(getApplicationContext(),
                                             "Error saving: " + e.getMessage(),
@@ -224,6 +257,13 @@ public class EditDebtActivity extends AppCompatActivity {
         });
 
         setupSearchView();
+    }
+
+    public void returnToMain(Debt debt) {
+        Intent i = new Intent(getApplicationContext(), MainActivity.class);
+//        i.putExtra(Debt.KEY_UUID, debt.getUuidString());
+        i.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
+        startActivity(i);
     }
 /*
     @Override
@@ -292,6 +332,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
         alertIntent.putExtra(Debt.KEY_TITLE, debt.getTitle());
         alertIntent.putExtra(Debt.KEY_OWNER, debt.getOwner());
+        alertIntent.putExtra(Debt.KEY_PHONE, debt.getPhone());
         alertIntent.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
 
         alertIntent.setData(Uri.parse(ALARM_SCHEME + schemeSpecificPart));

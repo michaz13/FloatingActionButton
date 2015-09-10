@@ -10,13 +10,20 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -74,12 +81,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if(iOweViewFragmentWithTag == null){
+            iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
+        }
+        if(oweMeViewFragmentWithTag == null){
+            oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
+        }
         // Check if we have a real user
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             // Sync data to Parse
             syncDebtsToParse(!SHOW_LOGIN_ON_ERROR);
             // Update the logged in label info
             updateLoggedInInfo();
+        }
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra(Debt.KEY_TAB_TAG)) {
+            String tabTag = intent.getStringExtra(Debt.KEY_TAB_TAG);
+            if (tabTag.equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
+                iOweViewFragmentWithTag.updateView();
+            } else if (oweMeViewFragmentWithTag != null) {
+                oweMeViewFragmentWithTag.updateView();
+            }
         }
     }
 
@@ -206,9 +228,9 @@ public class MainActivity extends AppCompatActivity {
                         isDirtyFixed = true;
                     }
                 }
-                String info = "\nuser: " + curr.getUsername() + "\nisAuth: " + isAuth + "\nisDataAvai: " + isDataAvai + "\nisNew: " + isNew + "\nisDirty: " + isDirty + (isDirtyFixed ? " (fixed)" : "") + "\nkeys: " + keys + "\ndirtyKey: " + dirtyKey + "\nnumDirty: " + numDirty + "\ntoken: " + token + "\nisLinked: " + isLinked + "\npinned: " + numPinned + "\nsaved: " + numSaved;
+                String info = "\nphone : "+curr.getString("phone")+"\nuser: " + curr.getUsername() + "\nisAuth: " + isAuth + "\nisDataAvai: " + isDataAvai + "\nisNew: " + isNew + "\nisDirty: " + isDirty + (isDirtyFixed ? " (fixed)" : "") + "\nkeys: " + keys + "\ndirtyKey: " + dirtyKey + "\nnumDirty: " + numDirty + "\ntoken: " + token + "\nisLinked: " + isLinked + "\npinned: " + numPinned + "\nsaved: " + numSaved;
 
-                content.setText(info/*Html.fromHtml(getString(R.string.about_body))*/);// FIXME: 07/09/2015 about text
+                content.setText(Html.fromHtml(getString(R.string.about_body)));// FIXME: 07/09/2015 about text
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.about)
                         .setView(content)
@@ -282,13 +304,13 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             if (requestCode == EDIT_ACTIVITY_CODE || requestCode == EDIT_ACTIVITY_FRAGMENT_CODE) {
                 // Coming back from the edit view, update the view
-                // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
+                // REMOVE: 07/09/2015 debtListAdapterIOwe.loadObjects();
                 if (data != null && data.hasExtra(Debt.KEY_TAB_TAG)) {
                     String tabTag = data.getStringExtra(Debt.KEY_TAB_TAG);
                     if (tabTag.equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
                         iOweViewFragmentWithTag.updateView();
                     } else if (oweMeViewFragmentWithTag != null) {
-                        iOweViewFragmentWithTag.updateView();
+                        oweMeViewFragmentWithTag.updateView();
                     }
                 }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
@@ -360,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
                                         if (e == null) {
                                             // Let adapter know to update view
                                             if (!isFinishing()) {
-                                                // REMOVE: 07/09/2015 debtListAdapter.notifyDataSetChanged();
+                                                // REMOVE: 07/09/2015 debtListAdapterIOwe.notifyDataSetChanged();
                                                 if (debt.getTabTag().equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
                                                     iOweViewFragmentWithTag.updateView();
                                                 } else if (oweMeViewFragmentWithTag != null) {
@@ -426,7 +448,7 @@ public class MainActivity extends AppCompatActivity {
                                                     cancelAlarm(debt);
                                                 }
                                             }
-                                            // REMOVE: 07/09/2015 debtListAdapter.loadObjects();
+                                            // REMOVE: 07/09/2015 debtListAdapterIOwe.loadObjects();
                                             if (iOweViewFragmentWithTag != null) {
                                                 iOweViewFragmentWithTag.updateView();
                                             }
@@ -551,6 +573,5 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();// REMOVE: 06/09/2015*/
         }
     }
-
 
 }

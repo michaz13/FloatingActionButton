@@ -25,16 +25,13 @@ import com.parse.ParseQueryAdapter;
 public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
 
     // Adapter for the Debts Parse Query
-    ParseQueryAdapter<Debt> debtListAdapter;
+    ParseQueryAdapter<Debt> debtListAdapterOweMe;
 
     // For showing empty and non-empty debt views
-    private ListView debtListView;
-    private LinearLayout noDebtsView;
+    private ListView debtListViewOweMe;
+    private LinearLayout noDebtsViewOweMe;
 
-    private String tabTag;// TODO: 09/09/2015 ?
-
-
-    private View mRoot;
+    private View mRootOweMe;
 
     ParseQueryAdapter.QueryFactory<Debt> factory;
 
@@ -53,41 +50,41 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
     @SuppressLint("InflateParams")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (mRoot != null) {
-            return mRoot;
+        if (mRootOweMe != null) {
+            return mRootOweMe;
         }
 
-        View root = inflater.inflate(R.layout.fragment_listview, container, false);
+        View root = inflater.inflate(R.layout.fragment_listview2, container, false);
         // Set up the views
-        debtListView = (ListView) root.findViewById(android.R.id.list);
-        noDebtsView = (LinearLayout) root.findViewById(R.id.no_debts_view);
-        debtListView.setEmptyView(noDebtsView);
+        debtListViewOweMe = (ListView) root.findViewById(android.R.id.list);
+        noDebtsViewOweMe = (LinearLayout) root.findViewById(R.id.no_debts_view2);
+        debtListViewOweMe.setEmptyView(noDebtsViewOweMe);
 
         // Set up the adapter
-        debtListAdapter = new DebtListAdapter(getActivity(), factory);
+        debtListAdapterOweMe = new DebtListAdapter(getActivity(), factory);
 
         // Attach the query adapter to the view
-        debtListView.setAdapter(debtListAdapter);
+        debtListViewOweMe.setAdapter(debtListAdapterOweMe);
 
-        debtListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        debtListViewOweMe.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
-                Debt debt = debtListAdapter.getItem(position);
+                Debt debt = debtListAdapterOweMe.getItem(position);
                 openEditView(debt);
             }
         });
 
-        FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab);
+        FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab2);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent i = new Intent(getActivity().getApplicationContext(), EditDebtActivity.class);
                 i.putExtra(Debt.KEY_TAB_TAG, getTag());
-                startActivityForResult(i , MainActivity.EDIT_ACTIVITY_CODE);
+                startActivityForResult(i, MainActivity.EDIT_ACTIVITY_CODE);
             }
         });
-        fab.attachToListView(debtListView, new ScrollDirectionListener() {// REMOVE: 07/09/2015 listener
+        fab.attachToListView(debtListViewOweMe, new ScrollDirectionListener() {// REMOVE: 07/09/2015 listener
             @Override
             public void onScrollDown() {
                 Log.d("ListViewFragmentOweMe", "onScrollDown()");
@@ -109,7 +106,7 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
             }
         });
 
-        mRoot = root;
+        mRootOweMe = root;
         return root;
     }
 
@@ -123,15 +120,11 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
     }
 
     public void updateView() {
-        debtListAdapter.loadObjects();// REMOVE: 07/09/2015 ?
-        debtListAdapter.notifyDataSetChanged();
-    }
-
-    public void setTabTag(String tabTag) {
-        this.tabTag = tabTag;
+        debtListAdapterOweMe.loadObjects();// REMOVE: 07/09/2015 ?
+        debtListAdapterOweMe.notifyDataSetChanged();
     }
 
     public void clearView() {
-        debtListAdapter.clear();
+        debtListAdapterOweMe.clear();
     }
 }
