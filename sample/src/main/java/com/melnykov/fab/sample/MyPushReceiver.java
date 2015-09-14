@@ -53,9 +53,9 @@ public class MyPushReceiver extends ParsePushBroadcastReceiver {
                 debt = object;
                 String alert = "Friend's debt created";
                 if (debt.getTabTag().equals(Debt.OWE_ME_TAG)) { // reversed logic
-                    createNotification(context, debt.getAuthor().getUsername() + " owes you", debt.getTitle(), alert, debt.getUuidString(), debt);
+                    createNotification(context, "You owe " + debt.getAuthor().getString("name"), debt.getTitle(), alert, debt.getUuidString(), debt);
                 } else {
-                    createNotification(context, "You owe " + debt.getAuthor().getUsername(), debt.getTitle(), alert, debt.getUuidString(), debt);
+                    createNotification(context, debt.getAuthor().getString("name") + " owes you", debt.getTitle(), alert, debt.getUuidString(), debt);
                 }
             }
 
@@ -90,7 +90,7 @@ public class MyPushReceiver extends ParsePushBroadcastReceiver {
                 .setSmallIcon(R.drawable.ic_launcher)
                 .setContentIntent(notificationIntent)
                 .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
-                .addAction(0, "Call " + debt.getAuthor().getUsername(), notificationCallIntent) // FIXME: 14/09/2015 dep
+                .addAction(0, "Call " + debt.getAuthor().getString("name"), notificationCallIntent) // FIXME: 14/09/2015 dep
                 .setAutoCancel(true)
                 .build();
         NotificationManager mNotificationManager = (NotificationManager) context

@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'build-announcements'
 
 android {
     compileSdkVersion 23

@@ -39,14 +39,6 @@ import java.util.Date;
 
 public class EditDebtActivity extends AppCompatActivity {
 
-    class MyObj {// REMOVE: 10/09/2015
-        public String k;
-
-        public MyObj(String k) {
-            this.k = k;
-        }
-    }
-
     private static final String ALARM_SCHEME = "timer:";
 
     private Button saveButton;
@@ -75,7 +67,7 @@ public class EditDebtActivity extends AppCompatActivity {
         if (isFromPush) {
             cloneDebtFromPush();
         } else if (debtId != null) {
-            getExistingDebt();
+            loadExistingDebt();
         } else {
             debt = new Debt();
             debt.setUuidString();
@@ -195,7 +187,6 @@ public class EditDebtActivity extends AppCompatActivity {
         ParsePush push = new ParsePush();
         push.setChannel("t" + debt.getPhone());
         Gson gson = new Gson(); // Or use new GsonBuilder().create();
-        MyObj o = new MyObj("123");
         // TODO: 14/09/2015 use proxy (add image, date): https://gist.github.com/janakagamini/f5c63ea27bee8b7b7581
         push.setMessage(debt.getUuidString()/*gson.toJson(o)*/);///**/);
         push.sendInBackground(new SendCallback() {
@@ -212,7 +203,7 @@ public class EditDebtActivity extends AppCompatActivity {
         });
     }
 
-    private void getExistingDebt() {
+    private void loadExistingDebt() {
         ParseQuery<Debt> query = Debt.getQuery();
         query.fromLocalDatastore();
         query.whereEqualTo(Debt.KEY_UUID, debtId);
@@ -259,7 +250,7 @@ public class EditDebtActivity extends AppCompatActivity {
                     }
                     debt.setTabTag(tabTag);
                     debtTitleText.setText(other.getTitle());
-                    debtOwnerText.setText(other.getAuthor().getUsername());
+                    debtOwnerText.setText(other.getAuthor().getString("name"));
                     debtPhoneText.setText(other.getAuthor().getString("phone"));
                     debtDescText.setText(other.getDescription());
                     Date dueDate = other.getDueDate();
