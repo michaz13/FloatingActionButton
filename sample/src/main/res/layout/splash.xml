@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent" >
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
 
-        <TextView
-            android:id="@+id/textView1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Manage your debts - easily"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:layout_marginBottom="88dp"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:textSize="35dp"
-            android:gravity="center_horizontal"
-            android:textStyle="bold"
-            android:textColor="#1b72ba" />
-
-    <ImageView
+    <TextView
+        android:id="@+id/app_slogan_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="88dp"
+        android:gravity="center_horizontal"
+        android:text="@string/app_slogan"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textColor="#1b72ba"
+        android:textSize="35sp"
+        android:textStyle="bold" />
+
+    <ImageView
         android:id="@+id/logo_image"
-        android:src="@drawable/app_logo_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/app_slogan_text"
+        android:layout_centerHorizontal="true"
         android:layout_marginBottom="25dp"
-        android:layout_above="@+id/textView1"
-        android:layout_centerHorizontal="true" />
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/br" />
 
 </RelativeLayout>

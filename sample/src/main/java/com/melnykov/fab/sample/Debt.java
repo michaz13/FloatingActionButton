@@ -43,7 +43,7 @@ public class Debt extends ParseObject implements Serializable{
 
     public void setTitle(String title) {
         if (title != null) {
-            put(KEY_TITLE, title);
+            put(KEY_TITLE, title.trim());
         } else {
             remove(KEY_TITLE);
         }
@@ -55,7 +55,7 @@ public class Debt extends ParseObject implements Serializable{
 
     public void setOwner(String owner) {
         if (owner != null) {
-            put(KEY_OWNER, owner);
+            put(KEY_OWNER, owner.trim());
         } else {
             remove(KEY_OWNER);
         }
@@ -67,7 +67,7 @@ public class Debt extends ParseObject implements Serializable{
 
     public void setPhone(String phone) {
         if (phone != null) {
-            put(KEY_PHONE, phone);
+            put(KEY_PHONE, phone.replaceAll("[^0-9]+", ""));
         } else {
             remove(KEY_PHONE);
         }
@@ -79,7 +79,7 @@ public class Debt extends ParseObject implements Serializable{
 
     public void setDescription(String description) {
         if (description != null) {
-            put(KEY_DESCRIPTION, description);
+            put(KEY_DESCRIPTION, description.trim());
         } else {
             remove(KEY_DESCRIPTION);
         }
@@ -129,4 +129,6 @@ public class Debt extends ParseObject implements Serializable{
     public static ParseQuery<Debt> getQuery() {
         return ParseQuery.getQuery(Debt.class);
     }
+
+    
 }

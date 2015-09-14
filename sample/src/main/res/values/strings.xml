@@ -84,6 +84,7 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
+    <string name="ignore">Ignore</string>
     <string name="action_new">New Debt</string>
     <string name="action_sync">Sync</string>
     <string name="action_logout">Log Out</string>
@@ -103,5 +104,7 @@
     <string name="remindCheckBox_text">Reminder</string>
 
     <string name="findContact">find person&#8230;</string>
+    <string name="app_slogan">Manage your debts - easily!</string>
+    <string name="remind_button_text">Set reminder</string>
 
 </resources>

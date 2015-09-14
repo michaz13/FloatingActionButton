@@ -10,26 +10,22 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.telephony.PhoneNumberUtils;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
 import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
+import com.parse.ParseInstallation;
 import com.parse.ParseObject;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
@@ -49,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int EDIT_ACTIVITY_FRAGMENT_CODE = 65736;
 
     private static final String ALARM_SCHEME = "timer:";
+    private static final String USER_CHANNEL_PREFIX = "t";
 
     private static final boolean SHOW_LOGIN_ON_ERROR = true;
 
@@ -63,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
 
     ListViewFragmentIOwe iOweViewFragmentWithTag;
     ListViewFragmentOweMe oweMeViewFragmentWithTag;
-    private boolean wasSubscribedToPush = false;
 
 
     @Override
@@ -81,10 +77,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(iOweViewFragmentWithTag == null){
+        if (iOweViewFragmentWithTag == null) {
             iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
         }
-        if(oweMeViewFragmentWithTag == null){
+        if (oweMeViewFragmentWithTag == null) {
             oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
         }
         // Check if we have a real user
@@ -228,9 +224,10 @@ public class MainActivity extends AppCompatActivity {
                         isDirtyFixed = true;
                     }
                 }
-                String info = "\nphone : "+curr.getString("phone")+"\nuser: " + curr.getUsername() + "\nisAuth: " + isAuth + "\nisDataAvai: " + isDataAvai + "\nisNew: " + isNew + "\nisDirty: " + isDirty + (isDirtyFixed ? " (fixed)" : "") + "\nkeys: " + keys + "\ndirtyKey: " + dirtyKey + "\nnumDirty: " + numDirty + "\ntoken: " + token + "\nisLinked: " + isLinked + "\npinned: " + numPinned + "\nsaved: " + numSaved;
+                String info = "\nphone : " + curr.getString("phone") + "\nuser: " + curr.getUsername() + "\nisAuth: " + isAuth + "\nisDataAvai: " + isDataAvai + "\nisNew: " + isNew + "\nisDirty: " + isDirty + (isDirtyFixed ? " (fixed)" : "") + "\nkeys: " + keys + "\ndirtyKey: " + dirtyKey + "\nnumDirty: " + numDirty + "\ntoken: " + token + "\nisLinked: " + isLinked + "\npinned: " + numPinned + "\nsaved: " + numSaved;
 
-                content.setText(Html.fromHtml(getString(R.string.about_body)));// FIXME: 07/09/2015 about text
+//                content.setText(Html.fromHtml(getString(R.string.about_body)));// UNCOMMENT: 14/09/2015
+                content.setText(info);// REMOVE: 14/09/2015
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.about)
                         .setView(content)
@@ -314,9 +311,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
-                if (!wasSubscribedToPush) {// TODO: 09/09/2015 check phone
-                    ParsePush.subscribeInBackground("t" + ParseUser.getCurrentUser().getString("phone"));
-                    wasSubscribedToPush = true;
+                // Subscribe to push channel
+                List<String> subscribedChannels = ParseInstallation.getCurrentInstallation().getList("channels");
+                String currUserChannel = USER_CHANNEL_PREFIX + ParseUser.getCurrentUser().getString("phone").replaceAll("[^0-9]+", "");
+                if (subscribedChannels == null || !subscribedChannels.contains(currUserChannel)) {
+                    ParsePush.subscribeInBackground(currUserChannel);
                 }
                 // If the user is new, sync data to Parse,
                 // else get the current list from Parse
@@ -337,6 +336,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logoutFromParse() {
+        // Un-subscribe from push channel
+        List<String> subscribedChannels = ParseInstallation.getCurrentInstallation().getList("channels");
+        String currUserChannel = USER_CHANNEL_PREFIX + ParseUser.getCurrentUser().getString("phone").replaceAll("[^0-9]+", "");
+        if (subscribedChannels != null && subscribedChannels.contains(currUserChannel)) {
+            ParsePush.unsubscribeInBackground(currUserChannel);
+        }
         // Log out the current user
         ParseUser.logOut();
         // Create a new anonymous user
