@@ -22,7 +22,9 @@
 package com.parse.ui;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
+import android.telephony.TelephonyManager;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,9 +34,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
 import com.parse.ParseException;
 import com.parse.ParseUser;
 import com.parse.SignUpCallback;
+
+import java.util.Locale;
 
 /**
  * Fragment for the user signup screen.
@@ -197,7 +204,8 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
         user.put(USER_OBJECT_NAME_FIELD, name);
       }
       if (phone.length() != 0) {
-        user.put(USER_OBJECT_PHONE_FIELD, phone);
+        // Format phone number to E164 standard to use it as a unique identifier
+        user.put(USER_OBJECT_PHONE_FIELD, formatToE164(phone));
       }
 
       loadingStart();
@@ -235,6 +243,49 @@ public class ParseSignupFragment extends ParseLoginFragmentBase implements OnCli
         }
       });
     }
+  }
+
+  /**
+   * Converts the phone number to E164 standard
+   *
+   * @param phone the phone number to convert
+   * @return same number in E164 format
+   */
+  private String formatToE164(String phone) {
+    PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
+    Phonenumber.PhoneNumber numberProto = null;
+    try {
+      numberProto = phoneUtil.parse(phone, getUserCountry());
+    } catch (NumberParseException e) {
+      System.err.println("NumberParseException was thrown: " + e.toString());
+    }
+    String formatted = null;
+    if (numberProto != null) {
+      formatted = phoneUtil.format(numberProto, PhoneNumberUtil.PhoneNumberFormat.E164);
+    }
+    return (formatted != null ? formatted : phone.replaceAll("[^0-9+]+", ""));
+  }
+
+  /**
+   * Get ISO 3166-1 alpha-2 country code for this device (or null if not available)
+   *
+   * @return country code or null
+   */
+  public String getUserCountry() {
+    try {
+      final TelephonyManager tm = (TelephonyManager) getActivity().getApplicationContext().getSystemService(Context.TELEPHONY_SERVICE);
+      final String simCountry = tm.getSimCountryIso();
+      if (simCountry != null && simCountry.length() == 2) { // SIM country code is available
+        return simCountry.toUpperCase(Locale.US);
+      } else if (tm.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) { // device is not 3G (would be unreliable)
+        String networkCountry = tm.getNetworkCountryIso();
+        if (networkCountry != null && networkCountry.length() == 2) { // network country code is available
+          return networkCountry.toUpperCase(Locale.US);
+        }
+      }
+    } catch (Exception e) {
+    }
+    return null;
   }
 
   @Override

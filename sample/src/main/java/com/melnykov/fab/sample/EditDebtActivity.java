@@ -3,10 +3,12 @@ package com.melnykov.fab.sample;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -15,17 +17,23 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.PhoneNumberUtils;
+import android.telephony.TelephonyManager;
+import android.util.Pair;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
 import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParsePush;
@@ -34,7 +42,9 @@ import com.parse.ParseUser;
 import com.parse.SaveCallback;
 import com.parse.SendCallback;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 
 
 public class EditDebtActivity extends AppCompatActivity {
@@ -63,16 +73,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
         fetchExtras();
         initViewHolders();
-
-        if (isFromPush) {
-            cloneDebtFromPush();
-        } else if (debtId != null) {
-            loadExistingDebt();
-        } else {
-            debt = new Debt();
-            debt.setUuidString();
-            debt.setTabTag(debtTabTag);
-        }
+        prepareDebt();
 
         saveButton.setOnClickListener(new OnClickListener() {
 
@@ -80,7 +81,7 @@ public class EditDebtActivity extends AppCompatActivity {
             public void onClick(View v) {
                 debt.setTitle(debtTitleText.getText().toString());
                 debt.setOwner(debtOwnerText.getText().toString());
-                debt.setPhone(debtPhoneText.getText().toString());
+                debt.setPhone(debtPhoneText.getText().toString(), getUserCountry(EditDebtActivity.this));
                 debt.setDescription(debtDescText.getText().toString());
                 if (!remindCheckBox.isChecked()) {
                     // In case the date was already set by the dialog
@@ -88,7 +89,10 @@ public class EditDebtActivity extends AppCompatActivity {
                     cancelAlarm(debt);
                 }
                 debt.setDraft(true);
-                debt.setAuthor(ParseUser.getCurrentUser());
+                ParseUser currUser=ParseUser.getCurrentUser();
+                debt.setAuthor(currUser);
+                debt.setAuthorName(currUser.getString("name"));
+                debt.setAuthorPhone(currUser.getString("phone"));
                 debt.pinInBackground(DebtListApplication.DEBT_GROUP_NAME,
                         new SaveCallback() {
 
@@ -98,25 +102,19 @@ public class EditDebtActivity extends AppCompatActivity {
                                     return;
                                 }
                                 if (e == null) {
-                                    if (!isFromPush) {
-                                        sendPushToOwner();
+                                    if (!isFromPush && debt.getPhone() != null) {// TODO: 15/09/2015 check if connected to parse
+                                        showPushDialog();
+                                    } else {
+                                        wrapUp();
                                     }
-                                    if (debt.getDueDate() != null) {
-                                        setAlarm(debt);
-                                    }
-                                    setResult(Activity.RESULT_OK);
-                                    finish();
-                                    returnToMain(debt); // in case the activity was not started for a result
                                 } else {
                                     Toast.makeText(getApplicationContext(),
                                             "Error saving: " + e.getMessage(),
                                             Toast.LENGTH_LONG).show();
                                 }
                             }
-
                         });
             }
-
         });
 
         deleteButton.setOnClickListener(new OnClickListener() {
@@ -164,6 +162,55 @@ public class EditDebtActivity extends AppCompatActivity {
         setupSearchView();
     }
 
+    private void wrapUp() {
+        if (debt.getDueDate() != null) {
+            setAlarm(debt);
+        }
+        setResult(Activity.RESULT_OK);
+        finish();
+        returnToMain(debt); // in case the activity was not started for a result
+    }
+
+    private void showPushDialog() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(EditDebtActivity.this);
+        builder.setMessage("Contact " + debt.getOwner() + " by sending push notification.\nOr make a phone call.");
+        builder.setPositiveButton("Send push", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                sendPushToOwner();
+                wrapUp();
+            }
+        });
+        builder.setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+                startActivity(dial);
+                if (debt.getDueDate() != null) {
+                    setAlarm(debt);
+                }
+                setResult(Activity.RESULT_OK);
+                finish();
+            }
+        });
+        builder.setNegativeButton("Skip", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+                wrapUp();
+            }
+        });
+        builder.show();
+    }
+
+    private void prepareDebt() {
+        if (isFromPush) {
+            cloneDebtFromPush();
+        } else if (debtId != null) {
+            loadExistingDebt();
+        } else {
+            debt = new Debt();
+            debt.setUuidString();
+            debt.setTabTag(debtTabTag);
+        }
+    }
+
     private void initViewHolders() {
         debtTitleText = (EditText) findViewById(R.id.debt_title);
         debtOwnerText = (EditText) findViewById(R.id.debt_owner);
@@ -185,7 +232,7 @@ public class EditDebtActivity extends AppCompatActivity {
     private void sendPushToOwner() {
         // TODO: 14/09/2015 send only if data was changed
         ParsePush push = new ParsePush();
-        push.setChannel("t" + debt.getPhone());
+        push.setChannel(MainActivity.USER_CHANNEL_PREFIX + debt.getPhone().replaceAll("[^0-9]+", ""));
         Gson gson = new Gson(); // Or use new GsonBuilder().create();
         // TODO: 14/09/2015 use proxy (add image, date): https://gist.github.com/janakagamini/f5c63ea27bee8b7b7581
         push.setMessage(debt.getUuidString()/*gson.toJson(o)*/);///**/);
@@ -197,7 +244,8 @@ public class EditDebtActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(getApplicationContext(),
                             "Push not sent: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                            Toast.LENGTH_LONG).show();// REMOVE: 15/09/2015
+
                 }
             }
         });
@@ -250,8 +298,8 @@ public class EditDebtActivity extends AppCompatActivity {
                     }
                     debt.setTabTag(tabTag);
                     debtTitleText.setText(other.getTitle());
-                    debtOwnerText.setText(other.getAuthor().getString("name"));
-                    debtPhoneText.setText(other.getAuthor().getString("phone"));
+                    debtOwnerText.setText(other.getAuthorName());
+                    debtPhoneText.setText(other.getAuthorPhone());
                     debtDescText.setText(other.getDescription());
                     Date dueDate = other.getDueDate();
                     if (dueDate != null) {
@@ -288,7 +336,6 @@ public class EditDebtActivity extends AppCompatActivity {
         contactSearchView.setSearchableInfo(searchableInfo);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)// FIXME: 14/09/2015 ?
     @Override
     protected void onNewIntent(Intent intent) {
         if (ContactsContract.Intents.SEARCH_SUGGESTION_CLICKED.equals(intent.getAction())) {
@@ -297,18 +344,34 @@ public class EditDebtActivity extends AppCompatActivity {
             debtOwnerText.setText(displayName);
             String phone = getPhoneNumber(displayName);
             debtPhoneText.setText(phone);
-
-            // REMOVE: 14/09/2015
-            String code = getResources().getConfiguration().locale.getCountry()+":"+getResources().getConfiguration().locale.getDisplayCountry();
-            String formatted = PhoneNumberUtils.formatNumber(phone);// FIXME: 14/09/2015 add 2nd arg
-            debtOwnerText.setText(formatted);
-            debtTitleText.setText(code);
-
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
             // handles a search query
             String query = intent.getStringExtra(SearchManager.QUERY);
 //            debtOwnerText.setText("should search for query: '" + query + "'..."); // REMOVE: 14/09/2015
         }
+    }
+
+    /**
+     * Get ISO 3166-1 alpha-2 country code for this device (or null if not available)
+     *
+     * @param context Context reference to get the TelephonyManager instance from
+     * @return country code or null
+     */
+    public static String getUserCountry(Context context) {
+        try {
+            final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            final String simCountry = tm.getSimCountryIso();
+            if (simCountry != null && simCountry.length() == 2) { // SIM country code is available
+                return simCountry.toUpperCase(Locale.US);
+            } else if (tm.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) { // device is not 3G (would be unreliable)
+                String networkCountry = tm.getNetworkCountryIso();
+                if (networkCountry != null && networkCountry.length() == 2) { // network country code is available
+                    return networkCountry.toUpperCase(Locale.US);
+                }
+            }
+        } catch (Exception e) {
+        }
+        return null;
     }
 
     private String getDisplayNameForContact(Intent intent) {
@@ -322,7 +385,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
     public String getPhoneNumber(String name) {
         String ret = null;
-        String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " like'%" + name + "%'";
+        String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " like'" + name + "'";
         String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER};
         Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 projection, selection, null, null);
