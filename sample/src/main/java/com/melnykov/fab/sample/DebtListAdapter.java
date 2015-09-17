@@ -56,15 +56,30 @@ public class DebtListAdapter extends ParseQueryAdapter<Debt> {
 //            String info = "\nauthor: "+author.getUsername()+"\nisAuth: "+isAuth+"\nisDataAvai: "+isDataAvai+"\nisNew: "+isNew+"\nisDirty: "+isDirty+"\ntoken: "+token+"\nisLinked: "+isLinked;
 */
 
-
-        debtTitle.setText(debt.getTitle());
+String extra = "\n"+debt.getUuidString()+"<-"+debt.getOtherUuid();
+        debtTitle.setText(debt.getTitle()+extra);
         if (debt.isDraft()) {
             debtTitle.setTypeface(null, Typeface.ITALIC);
             debtTitle.setTextColor(Color.RED);// TODO: 02/09/2015 GRAY
 
         } else {
             debtTitle.setTypeface(null, Typeface.NORMAL);
-            debtTitle.setTextColor(Color.BLACK);
+            if(debt.getStatus()==Debt.STATUS_CREATED){
+                debtTitle.setTextColor(Color.BLACK);
+            }
+            else if(debt.getStatus()==Debt.STATUS_PENDING){
+                debtTitle.setTextColor(Color.GREEN);
+            }
+            else if(debt.getStatus()==Debt.STATUS_CONFIRMED){
+                debtTitle.setTextColor(Color.BLUE);
+            }
+            else if(debt.getStatus()==Debt.STATUS_RETURNED){
+                debtTitle.setTextColor(Color.MAGENTA);
+            }
+            else{
+                debtTitle.setTextColor(Color.YELLOW);
+            }
+
         }
         return view;
     }

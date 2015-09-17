@@ -11,6 +11,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -42,6 +44,8 @@ import com.parse.ParseUser;
 import com.parse.SaveCallback;
 import com.parse.SendCallback;
 
+import org.json.JSONObject;
+
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
@@ -49,7 +53,9 @@ import java.util.Locale;
 
 public class EditDebtActivity extends AppCompatActivity {
 
-    private static final String ALARM_SCHEME = "timer:";
+    /*package*/ static final String ALARM_SCHEME = "timer:";
+    private static final int FLAG_FORCE_BACK_TO_MAIN = 0x00040000;
+    private static final int FLAG_SET_ALARM = 0X00020000;
 
     private Button saveButton;
     private Button deleteButton;
@@ -89,7 +95,8 @@ public class EditDebtActivity extends AppCompatActivity {
                     cancelAlarm(debt);
                 }
                 debt.setDraft(true);
-                ParseUser currUser=ParseUser.getCurrentUser();
+                debt.setStatus(Debt.STATUS_CREATED);
+                ParseUser currUser = ParseUser.getCurrentUser();
                 debt.setAuthor(currUser);
                 debt.setAuthorName(currUser.getString("name"));
                 debt.setAuthorPhone(currUser.getString("phone"));
@@ -102,10 +109,11 @@ public class EditDebtActivity extends AppCompatActivity {
                                     return;
                                 }
                                 if (e == null) {
-                                    if (!isFromPush && debt.getPhone() != null) {// TODO: 15/09/2015 check if connected to parse
+                                    if (isFromPush) {// TODO: 15/09/2015 check if connected to parse
+                                        sendPushResponse(debt.getOtherUuid(), Debt.STATUS_CONFIRMED);
+                                        wrapUp(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
+                                    } else if (debt.getPhone() != null) {
                                         showPushDialog();
-                                    } else {
-                                        wrapUp();
                                     }
                                 } else {
                                     Toast.makeText(getApplicationContext(),
@@ -121,9 +129,9 @@ public class EditDebtActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
-                // The debt will be deleted eventually but will
-                // immediately be excluded from query results.
+                sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
                 cancelAlarm(debt);
+                // The debt will be deleted eventually but will immediately be excluded from query results.
                 debt.deleteEventually();
                 setResult(Activity.RESULT_OK);
                 finish();
@@ -151,9 +159,17 @@ public class EditDebtActivity extends AppCompatActivity {
 
                     }
                 };
+                Date initDate;
+                Date currDate = debt.getDueDate();
+                if (currDate != null) {
+                    initDate = currDate;
+                } else {
+                    initDate = new Date();
+                }
                 new SlideDateTimePicker.Builder(getSupportFragmentManager())
                         .setListener(listener)
-                        .setInitialDate(new Date())
+                        .setInitialDate(initDate)
+                        .setIndicatorColor(Color.RED)
                         .build()
                         .show();
             }
@@ -162,13 +178,45 @@ public class EditDebtActivity extends AppCompatActivity {
         setupSearchView();
     }
 
-    private void wrapUp() {
-        if (debt.getDueDate() != null) {
+    /**
+     * Synchronize the status of the other end
+     *
+     * @param otherUuid of the debt on the destination side
+     * @param status    to deliver to the other end
+     */
+    private void sendPushResponse(String otherUuid, final int status) {
+        if(otherUuid==null){
+            return;
+        }
+        ParsePush push = new ParsePush();
+        push.setChannel(MainActivity.USER_CHANNEL_PREFIX + debt.getPhone().replaceAll("[^0-9]+", ""));
+        Gson gson = new Gson(); // Or use new GsonBuilder().create();
+        // TODO: 14/09/2015 use proxy (add image, date): https://gist.github.com/janakagamini/f5c63ea27bee8b7b7581
+        push.setMessage(status + "+" + debt.getUuidString() + "+" + otherUuid/*gson.toJson(o)*/);///**/);
+        push.sendInBackground(new SendCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e == null) {
+                    debt.setStatus(status);
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "Push not sent: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();// REMOVE: 15/09/2015
+
+                }
+            }
+        });
+    }
+
+    private void wrapUp(int flags) {
+        if ((flags & FLAG_SET_ALARM) != 0 && debt.getDueDate() != null) {
             setAlarm(debt);
         }
         setResult(Activity.RESULT_OK);
         finish();
-        returnToMain(debt); // in case the activity was not started for a result
+        if ((flags & FLAG_FORCE_BACK_TO_MAIN) != 0) {
+            returnToMain(debt); // in case the activity was not started for a result
+        }
     }
 
     private void showPushDialog() {
@@ -177,23 +225,19 @@ public class EditDebtActivity extends AppCompatActivity {
         builder.setPositiveButton("Send push", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 sendPushToOwner();
-                wrapUp();
+                wrapUp(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
             }
         });
         builder.setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
                 Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
                 startActivity(dial);
-                if (debt.getDueDate() != null) {
-                    setAlarm(debt);
-                }
-                setResult(Activity.RESULT_OK);
-                finish();
+                wrapUp(FLAG_SET_ALARM);
             }
         });
         builder.setNegativeButton("Skip", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
-                wrapUp();
+                wrapUp(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
             }
         });
         builder.show();
@@ -240,7 +284,8 @@ public class EditDebtActivity extends AppCompatActivity {
             @Override
             public void done(ParseException e) {
                 if (e == null) {
-
+                    debt.setStatus(Debt.STATUS_PENDING);
+                    // TODO: 16/09/2015 save
                 } else {
                     Toast.makeText(getApplicationContext(),
                             "Push not sent: " + e.getMessage(),
@@ -274,7 +319,6 @@ public class EditDebtActivity extends AppCompatActivity {
                     deleteButton.setVisibility(View.VISIBLE);
                 }
             }
-
         });
     }
 
@@ -288,15 +332,10 @@ public class EditDebtActivity extends AppCompatActivity {
 
             @Override
             public void done(Debt other, ParseException e) {
+
                 if (!isFinishing()) {
-                    String tabTag = other.getTabTag();
-                    // Reverse tag
-                    if (tabTag.equals(Debt.I_OWE_TAG)) {
-                        tabTag = Debt.OWE_ME_TAG;
-                    } else {
-                        tabTag = Debt.I_OWE_TAG;
-                    }
-                    debt.setTabTag(tabTag);
+                    debt.setOtherUuid(debtId);
+                    debt.setTabTag(reverseTag(other.getTabTag()));
                     debtTitleText.setText(other.getTitle());
                     debtOwnerText.setText(other.getAuthorName());
                     debtPhoneText.setText(other.getAuthorPhone());
@@ -307,17 +346,26 @@ public class EditDebtActivity extends AppCompatActivity {
                         remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
                         remindCheckBox.setChecked(true);
                     }
+                    saveButton.setText(R.string.add_debt);
                     deleteButton.setText(R.string.ignore);
                     deleteButton.setVisibility(View.VISIBLE);
                 }
             }
-
         });
     }
 
-    public void returnToMain(Debt debt) {
+    private String reverseTag(String tabTag) {
+        if (tabTag.equals(Debt.I_OWE_TAG)) {
+            tabTag = Debt.OWE_ME_TAG;
+        } else {
+            tabTag = Debt.I_OWE_TAG;
+        }
+        return tabTag;
+    }
+
+    private void returnToMain(Debt debt) {
         Intent i = new Intent(getApplicationContext(), MainActivity.class);
-//        i.putExtra(Debt.KEY_UUID, debt.getUuidString());
+//        i.putExtra(Debt.KEY_UUID, debt.getUuidString());// REMOVE: 16/09/2015
         i.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
         startActivity(i);
     }
@@ -334,6 +382,7 @@ public class EditDebtActivity extends AppCompatActivity {
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
         SearchableInfo searchableInfo = searchManager.getSearchableInfo(getComponentName());
         contactSearchView.setSearchableInfo(searchableInfo);
+        contactSearchView.setIconified(false);
     }
 
     @Override
@@ -344,10 +393,10 @@ public class EditDebtActivity extends AppCompatActivity {
             debtOwnerText.setText(displayName);
             String phone = getPhoneNumber(displayName);
             debtPhoneText.setText(phone);
-        } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+        } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) { // REMOVE: 14/09/2015
             // handles a search query
             String query = intent.getStringExtra(SearchManager.QUERY);
-//            debtOwnerText.setText("should search for query: '" + query + "'..."); // REMOVE: 14/09/2015
+//            debtOwnerText.setText("should search for query: '" + query + "'...");
         }
     }
 
@@ -357,7 +406,7 @@ public class EditDebtActivity extends AppCompatActivity {
      * @param context Context reference to get the TelephonyManager instance from
      * @return country code or null
      */
-    public static String getUserCountry(Context context) {
+    private static String getUserCountry(Context context) {
         try {
             final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
             final String simCountry = tm.getSimCountryIso();
@@ -383,7 +432,7 @@ public class EditDebtActivity extends AppCompatActivity {
         return name;
     }
 
-    public String getPhoneNumber(String name) {
+    private String getPhoneNumber(String name) {
         String ret = null;
         String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " like'" + name + "'";
         String[] projection = new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER};
@@ -421,12 +470,8 @@ public class EditDebtActivity extends AppCompatActivity {
         am.set(AlarmManager.RTC_WAKEUP, timeInMillis, PendingIntent.getBroadcast(
                 this, alarmId, alertIntent, PendingIntent.FLAG_UPDATE_CURRENT));
 
-        Toast.makeText(
-                this,
-                "Reminder  " + alarmId + " at "
-                        + android.text.format.DateFormat.format(
-                        "MM/dd/yy h:mmaa",
-                        timeInMillis),
+        Toast.makeText(this, "Reminder  " + alarmId + " at "
+                        + android.text.format.DateFormat.format("MM/dd/yy h:mmaa", timeInMillis),
                 Toast.LENGTH_LONG).show();// REMOVE: 07/09/2015
     }
 

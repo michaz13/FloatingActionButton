@@ -33,13 +33,14 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
 
     private View mRootOweMe;
 
-    ParseQueryAdapter.QueryFactory<Debt> factory;
+    ParseQueryAdapter.QueryFactory<Debt> factoryOweMe;
 
     public ListViewFragmentOweMe() {
         // Set up the Parse query to use in the adapter
-        factory = new ParseQueryAdapter.QueryFactory<Debt>() {
+        factoryOweMe = new ParseQueryAdapter.QueryFactory<Debt>() {
             public ParseQuery<Debt> create() {
                 ParseQuery<Debt> query = Debt.getQuery();
+                query.whereEqualTo(Debt.KEY_TAB_TAG, Debt.OWE_ME_TAG);
                 query.orderByAscending("createdAt");
                 query.fromLocalDatastore();
                 return query;
@@ -54,14 +55,14 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
             return mRootOweMe;
         }
 
-        View root = inflater.inflate(R.layout.fragment_listview2, container, false);
+        View root = inflater.inflate(R.layout.fragment_listview, container, false);
         // Set up the views
         debtListViewOweMe = (ListView) root.findViewById(android.R.id.list);
-        noDebtsViewOweMe = (LinearLayout) root.findViewById(R.id.no_debts_view2);
+        noDebtsViewOweMe = (LinearLayout) root.findViewById(R.id.no_debts_view);
         debtListViewOweMe.setEmptyView(noDebtsViewOweMe);
 
         // Set up the adapter
-        debtListAdapterOweMe = new DebtListAdapter(getActivity(), factory);
+        debtListAdapterOweMe = new DebtListAdapter(getActivity(), factoryOweMe);
 
         // Attach the query adapter to the view
         debtListViewOweMe.setAdapter(debtListAdapterOweMe);
@@ -75,7 +76,7 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
             }
         });
 
-        FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab2);
+        FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

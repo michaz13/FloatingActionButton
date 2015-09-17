@@ -140,7 +140,7 @@ public class SlideDateTimePicker
      */
     public void setTheme(int theme)
     {
-        mTheme = theme;
+        mTheme = SlideDateTimePicker.HOLO_DARK;// FIXME: 17/09/2015
     }
 
     /**

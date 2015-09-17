@@ -85,6 +85,7 @@
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
     <string name="ignore">Ignore</string>
+    <string name="add_debt">Add to my debts</string>
     <string name="action_new">New Debt</string>
     <string name="action_sync">Sync</string>
     <string name="action_logout">Log Out</string>

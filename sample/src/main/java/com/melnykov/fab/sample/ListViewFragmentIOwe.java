@@ -40,6 +40,7 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
         factoryIOwe = new ParseQueryAdapter.QueryFactory<Debt>() {
             public ParseQuery<Debt> create() {
                 ParseQuery<Debt> query = Debt.getQuery();
+                query.whereEqualTo(Debt.KEY_TAB_TAG, Debt.I_OWE_TAG);
                 query.orderByAscending("createdAt");
                 query.fromLocalDatastore();
                 return query;

@@ -1,8 +1,5 @@
 package com.melnykov.fab.sample;
 
-import android.annotation.TargetApi;
-import android.os.Build;
-import android.telephony.PhoneNumberUtils;
 
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
@@ -12,28 +9,33 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
-import org.json.JSONObject;
-
-import java.io.Serializable;
 import java.util.Date;
 import java.util.UUID;
 
 @ParseClassName("Debt")
-public class Debt extends ParseObject implements Serializable {
+public class Debt extends ParseObject {
 
     public static final String KEY_UUID = "uuid";
     public static final String KEY_IS_DRAFT = "isDraft";
     public static final String KEY_AUTHOR = "author";
     public static final String KEY_AUTHOR_NAME = "authorName";
     public static final String KEY_AUTHOR_PHONE = "authorPhone";
+    public static final String KEY_OTHER_UUID = "origUuid";
     public static final String KEY_DUE_DATE = "dueDate";
     public static final String KEY_DESCRIPTION = "description";
     public static final String KEY_TITLE = "title";
     public static final String KEY_OWNER = "owner";
+    public static final String KEY_STATUS = "status";
     public static final String KEY_PHONE = "phone";
     public static final String KEY_TAB_TAG = "tabTag";
+
     public static final String I_OWE_TAG = "iOwe";
     public static final String OWE_ME_TAG = "oweMe";
+
+    public static final int STATUS_CREATED = 1;
+    public static final int STATUS_PENDING = 2;
+    public static final int STATUS_CONFIRMED = 3;
+    public static final int STATUS_RETURNED = 4;
 
     public String getTabTag() {
         return getString(KEY_TAB_TAG);
@@ -71,6 +73,14 @@ public class Debt extends ParseObject implements Serializable {
         }
     }
 
+    public int getStatus() {
+        return getInt(KEY_STATUS);
+    }
+
+    public void setStatus(int status) {
+            put(KEY_STATUS, status);
+    }
+
     public String getPhone() {
         return getString(KEY_PHONE);
     }
@@ -78,7 +88,7 @@ public class Debt extends ParseObject implements Serializable {
     public void setPhone(String phone, String userCountry) {
         if (phone != null) {
             // Format phone number to E164 standard to use it as a unique identifier
-            put(KEY_PHONE, formatToE164(phone, userCountry));
+            put(KEY_PHONE, formatToE164(phone, userCountry).trim());
         } else {
             remove(KEY_PHONE);
         }
@@ -136,26 +146,40 @@ public class Debt extends ParseObject implements Serializable {
             remove(KEY_AUTHOR);
         }
     }
+
     public String getAuthorName() {
         return getString(KEY_AUTHOR_NAME);
     }
 
     public void setAuthorName(String authorName) {
         if (authorName != null) {
-            put(KEY_AUTHOR_NAME, authorName);
+            put(KEY_AUTHOR_NAME, authorName.trim());
         } else {
             remove(KEY_AUTHOR_NAME);
         }
     }
+
     public String getAuthorPhone() {
         return getString(KEY_AUTHOR_PHONE);
     }
 
     public void setAuthorPhone(String authorPhone) {
         if (authorPhone != null) {
-            put(KEY_AUTHOR_PHONE, authorPhone);
+            put(KEY_AUTHOR_PHONE, authorPhone.trim());
         } else {
             remove(KEY_AUTHOR_PHONE);
+        }
+    }
+
+    public String getOtherUuid() {
+        return getString(KEY_OTHER_UUID);
+    }
+
+    public void setOtherUuid(String otherUuid) {
+        if (otherUuid != null) {
+            put(KEY_OTHER_UUID, otherUuid.trim());
+        } else {
+            remove(KEY_OTHER_UUID);
         }
     }
 
@@ -179,6 +203,4 @@ public class Debt extends ParseObject implements Serializable {
     public static ParseQuery<Debt> getQuery() {
         return ParseQuery.getQuery(Debt.class);
     }
-
-
 }
