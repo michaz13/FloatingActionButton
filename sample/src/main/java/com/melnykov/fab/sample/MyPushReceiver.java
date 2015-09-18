@@ -101,7 +101,7 @@ public class MyPushReceiver extends ParsePushBroadcastReceiver {
      * @param alert   shows on the top bar for one second
      * @param uuid    must be unique
      */
-    public void createNotification(Context context, String title, String text, String alert, String uuid, Debt debt) {
+    private void createNotification(Context context, String title, String text, String alert, String uuid, Debt debt) {
         Intent intent = new Intent(context, EditDebtActivity.class);
 //        intent.setFlags(/*Intent.FLAG_ACTIVITY_REORDER_TO_FRONT*/ /*Intent.FLAG_ACTIVITY_SINGLE_TOP | */Intent.FLAG_ACTIVITY_CLEAR_TOP);// REMOVE: 14/09/2015
         int alarmId = uuid.hashCode();

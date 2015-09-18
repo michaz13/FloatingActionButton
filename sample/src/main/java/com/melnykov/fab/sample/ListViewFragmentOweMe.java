@@ -22,7 +22,7 @@ import com.parse.ParseQueryAdapter;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
+public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {// REMOVE: 17/09/2015
 
     // Adapter for the Debts Parse Query
     ParseQueryAdapter<Debt> debtListAdapterOweMe;
@@ -113,19 +113,19 @@ public class ListViewFragmentOweMe extends android.support.v4.app.Fragment {
 
 
     // Helper methods: -----------------------------------------------------------------------------
-    public void openEditView(Debt debt) {
+    private void openEditView(Debt debt) {
         Intent i = new Intent(getActivity().getApplicationContext(), EditDebtActivity.class);
         i.putExtra(Debt.KEY_UUID, debt.getUuidString());
         i.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
         startActivityForResult(i, MainActivity.EDIT_ACTIVITY_CODE);
     }
 
-    public void updateView() {
+    private void updateView() {
         debtListAdapterOweMe.loadObjects();// REMOVE: 07/09/2015 ?
         debtListAdapterOweMe.notifyDataSetChanged();
     }
 
-    public void clearView() {
+    void clearView() {
         debtListAdapterOweMe.clear();
     }
 }

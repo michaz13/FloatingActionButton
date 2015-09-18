@@ -15,7 +15,7 @@ import com.parse.ParseUser;
 /**
  * Created by Michael on 07/09/2015.
  */
-public class DebtListAdapter extends ParseQueryAdapter<Debt> {
+class DebtListAdapter extends ParseQueryAdapter<Debt> {
 
     private class ViewHolder {
         TextView debtTitle;
@@ -23,7 +23,7 @@ public class DebtListAdapter extends ParseQueryAdapter<Debt> {
 
     private final Context mContext;
 
-    public DebtListAdapter(Context context, QueryFactory<Debt> queryFactory) {
+    DebtListAdapter(Context context, QueryFactory<Debt> queryFactory) {
         super(context, queryFactory);
         mContext = context;
     }

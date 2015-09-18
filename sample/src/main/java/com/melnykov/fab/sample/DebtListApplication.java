@@ -9,7 +9,7 @@ import com.parse.ParseUser;
 
 public class DebtListApplication extends Application {
 
-    public static final String DEBT_GROUP_NAME = "ALL_DEBT";
+    static final String DEBT_GROUP_NAME = "ALL_DEBT";
 
     @Override
     public void onCreate() {

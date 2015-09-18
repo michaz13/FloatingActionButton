@@ -46,7 +46,7 @@ public class DueDateAlarm extends BroadcastReceiver {
      * @param alert   shows on the top bar for one second
      * @param uuid    must be unique
      */
-    public void createNotification(Context context, String title, String text, String alert, String uuid, String owner, String phone) {
+    private void createNotification(Context context, String title, String text, String alert, String uuid, String owner, String phone) {
         Intent intent = new Intent(context, EditDebtActivity.class);
 //        intent.setFlags(/*Intent.FLAG_ACTIVITY_REORDER_TO_FRONT*/ /*Intent.FLAG_ACTIVITY_SINGLE_TOP | */Intent.FLAG_ACTIVITY_CLEAR_TOP);
         int alarmId = uuid.hashCode();

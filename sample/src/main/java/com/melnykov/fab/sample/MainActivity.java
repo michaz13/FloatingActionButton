@@ -40,12 +40,15 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final int LOGIN_ACTIVITY_CODE = 100;
-    public static final int EDIT_ACTIVITY_CODE = 200;
-    public static final int EDIT_ACTIVITY_FRAGMENT_CODE = 65736;
+    static final int LOGIN_ACTIVITY_CODE = 100;
+    static final int EDIT_ACTIVITY_CODE = 200;
+    static final int EDIT_ACTIVITY_FRAGMENT_CODE = 65736;
+    static final String USER_CHANNEL_PREFIX = "t";
+
+    private static final int I_OWE_TAB_INDEX = 0;
+    private static final int OWE_ME_TAB_INDEX = 1;
 
     private static final String ALARM_SCHEME = "timer:";
-    public static final String USER_CHANNEL_PREFIX = "t";
 
     private static final boolean SHOW_LOGIN_ON_ERROR = true;
 
@@ -56,10 +59,10 @@ public class MainActivity extends AppCompatActivity {
     private int numSaved;//// TODO: 05/09/2015 remove
 
     ListViewFragmentIOwe iOweViewFragment;
-    ListViewFragmentOweMe oweMeViewFragment;
+    ListViewFragmentIOwe oweMeViewFragment;
 
-    ListViewFragmentIOwe iOweViewFragmentWithTag;
-    ListViewFragmentOweMe oweMeViewFragmentWithTag;
+//    ListViewFragmentIOwe iOweViewFragmentWithTag;
+//    ListViewFragmentOweMe oweMeViewFragmentWithTag;
 
 
     @Override
@@ -77,12 +80,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (iOweViewFragmentWithTag == null) {
-            iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
-        }
-        if (oweMeViewFragmentWithTag == null) {
-            oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
-        }
+//        if (iOweViewFragmentWithTag == null) {
+//            iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
+//        }
+//        if (oweMeViewFragmentWithTag == null) {
+//            oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
+//        }
         // Check if we have a real user
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             // Sync data to Parse
@@ -93,10 +96,11 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra(Debt.KEY_TAB_TAG)) {
             String tabTag = intent.getStringExtra(Debt.KEY_TAB_TAG);
-            if (tabTag.equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
-                iOweViewFragmentWithTag.updateView();
-            } else if (oweMeViewFragmentWithTag != null) {
-                oweMeViewFragmentWithTag.updateView();
+            ActionBar actionBar = getSupportActionBar();
+            if (tabTag.equals(Debt.I_OWE_TAG)) {
+                actionBar.selectTab(actionBar.getTabAt(I_OWE_TAB_INDEX));
+            } else {
+                actionBar.selectTab(actionBar.getTabAt(OWE_ME_TAB_INDEX));
             }
         }
     }
@@ -118,17 +122,21 @@ public class MainActivity extends AppCompatActivity {
             ActionBar actionBar = getSupportActionBar();
             actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
             actionBar.addTab(actionBar.newTab()
-                    .setText("I owe :(")
+                    .setText(getString(R.string.i_owe_tab_title))
                     .setTabListener(new ActionBar.TabListener() {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-                            if (iOweViewFragment == null || iOweViewFragmentWithTag == null) {
+//                            if (iOweViewFragment == null || iOweViewFragmentWithTag == null) {
+//                                iOweViewFragment = new ListViewFragmentIOwe();
+//                                fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
+//                                iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
+//                            } else {
+                            if (iOweViewFragment == null) {
                                 iOweViewFragment = new ListViewFragmentIOwe();
-                                fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
-                                iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
-                            } else {
-                                fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
                             }
+                            fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
+
+//                            }
                         }
 
                         @Override
@@ -140,17 +148,20 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }));
             actionBar.addTab(actionBar.newTab()
-                    .setText("Owe me :)")
+                    .setText(getString(R.string.owe_me_tab_title))
                     .setTabListener(new ActionBar.TabListener() {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-                            if (oweMeViewFragment == null || oweMeViewFragmentWithTag == null) {
-                                oweMeViewFragment = new ListViewFragmentOweMe();
-                                fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
-                                oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
-                            } else {
-                                fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
+//                            if (oweMeViewFragment == null || oweMeViewFragmentWithTag == null) {
+//                                oweMeViewFragment = new ListViewFragmentOweMe();
+//                                fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
+//                                oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
+//                            } else {
+                            if (oweMeViewFragment == null) {
+                                oweMeViewFragment = new ListViewFragmentIOwe();
                             }
+                            fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
+//                            }
                         }
 
                         @Override
@@ -303,12 +314,12 @@ public class MainActivity extends AppCompatActivity {
                 // Coming back from the edit view, update the view
                 // REMOVE: 07/09/2015 debtListAdapterIOwe.loadObjects();
                 if (data != null && data.hasExtra(Debt.KEY_TAB_TAG)) {
-                    String tabTag = data.getStringExtra(Debt.KEY_TAB_TAG);
-                    if (tabTag.equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
-                        iOweViewFragmentWithTag.updateView();
-                    } else if (oweMeViewFragmentWithTag != null) {
-                        oweMeViewFragmentWithTag.updateView();
-                    }
+//                    String tabTag = data.getStringExtra(Debt.KEY_TAB_TAG);
+//                    if (tabTag.equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
+//                        iOweViewFragment.updateView();
+//                    } else if (oweMeViewFragmentWithTag != null) {
+//                        oweMeViewFragmentWithTag.updateView();
+//                    }
                 }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
                 subscribeToPush();
@@ -353,12 +364,12 @@ public class MainActivity extends AppCompatActivity {
         // Create a new anonymous user
         ParseAnonymousUtils.logIn(null);// FIXME: 02/09/2015
         // Clear the view
-        if (iOweViewFragmentWithTag != null) {
-            iOweViewFragmentWithTag.clearView();
-        }
-        if (oweMeViewFragmentWithTag != null) {
-            oweMeViewFragmentWithTag.clearView();
-        }
+//        if (iOweViewFragmentWithTag != null) {
+        iOweViewFragment.clearView();// FIXME: 17/09/2015
+//        }
+//        if (oweMeViewFragmentWithTag != null) {
+//            oweMeViewFragmentWithTag.clearView();
+//        }
         // Unpin all the current objects
         ParseObject.unpinAllInBackground(DebtListApplication.DEBT_GROUP_NAME);
         cancelAllAlarmsOnPinnedObjects();// TODO: 09/09/2015 not only pinned ?
@@ -395,11 +406,11 @@ public class MainActivity extends AppCompatActivity {
                                             // Let adapter know to update view
                                             if (!isFinishing()) {
                                                 // REMOVE: 07/09/2015 debtListAdapterIOwe.notifyDataSetChanged();
-                                                if (debt.getTabTag().equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
-                                                    iOweViewFragmentWithTag.updateView();
-                                                } else if (oweMeViewFragmentWithTag != null) {
-                                                    oweMeViewFragmentWithTag.updateView();
-                                                }
+//                                                if (debt.getTabTag().equals(Debt.I_OWE_TAG) && iOweViewFragmentWithTag != null) {
+//                                                    iOweViewFragment.updateView();
+//                                                } else if (oweMeViewFragmentWithTag != null) {
+//                                                    oweMeViewFragmentWithTag.updateView();
+//                                                }
                                             }
                                         } else {
                                             if (!isShowLoginOnFail) {
@@ -461,12 +472,12 @@ public class MainActivity extends AppCompatActivity {
                                                 }
                                             }
                                             // REMOVE: 07/09/2015 debtListAdapterIOwe.loadObjects();
-                                            if (iOweViewFragmentWithTag != null) {
-                                                iOweViewFragmentWithTag.updateView();
-                                            }
-                                            if (oweMeViewFragment != null) {
-                                                oweMeViewFragment.updateView();
-                                            }
+//                                            if (iOweViewFragmentWithTag != null) {
+//                                                iOweViewFragment.updateView();
+//                                            }
+//                                            if (oweMeViewFragment != null) {
+//                                                oweMeViewFragment.updateView();
+//                                            }
                                         }
                                     } else {
                                         Log.i("DebtListActivity",
@@ -547,7 +558,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void handleParseError(ParseException e) {
+    private void handleParseError(ParseException e) {
         handleInvalidSessionToken();// TODO: 05/09/2015
 
         /*        switch (e.getCode()) {

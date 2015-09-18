@@ -40,7 +40,7 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
         factoryIOwe = new ParseQueryAdapter.QueryFactory<Debt>() {
             public ParseQuery<Debt> create() {
                 ParseQuery<Debt> query = Debt.getQuery();
-                query.whereEqualTo(Debt.KEY_TAB_TAG, Debt.I_OWE_TAG);
+                query.whereEqualTo(Debt.KEY_TAB_TAG, getTag());
                 query.orderByAscending("createdAt");
                 query.fromLocalDatastore();
                 return query;
@@ -88,22 +88,20 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
         fab.attachToListView(debtListViewIOwe, new ScrollDirectionListener() {// REMOVE: 07/09/2015 listener
             @Override
             public void onScrollDown() {
-                Log.d("ListViewFragmentOweMe", "onScrollDown()");
+
             }
 
             @Override
             public void onScrollUp() {
-                Log.d("ListViewFragmentOweMe", "onScrollUp()");
+
             }
         }, new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                Log.d("ListViewFragmentOweMe", "onScrollStateChanged()");
             }
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                Log.d("ListViewFragmentOweMe", "onScroll()");
             }
         });
 
@@ -111,21 +109,26 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
         return root;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateView();
+    }
 
     // Helper methods: -----------------------------------------------------------------------------
-    public void openEditView(Debt debt) {
+    private void openEditView(Debt debt) {
         Intent i = new Intent(getActivity().getApplicationContext(), EditDebtActivity.class);
         i.putExtra(Debt.KEY_UUID, debt.getUuidString());
         i.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
         startActivityForResult(i, MainActivity.EDIT_ACTIVITY_CODE);
     }
 
-    public void updateView() {
+    private void updateView() {
         debtListAdapterIOwe.loadObjects();// REMOVE: 07/09/2015 ?
         debtListAdapterIOwe.notifyDataSetChanged();
     }
 
-    public void clearView() {
+    void clearView() {
         debtListAdapterIOwe.clear();
     }
 }

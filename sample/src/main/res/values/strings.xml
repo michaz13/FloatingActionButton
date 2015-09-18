@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Yudaleh</string>
+    <string name="i_owe_tab_title">I owe :(</string>
+    <string name="owe_me_tab_title">Owe me :)</string>
     <string name="about">About</string>
     <string name="about_body"><![CDATA[
         Yudaleh - debt managing application.<br/>
@@ -9,6 +11,10 @@
         and<br/>
         Michael Zolotarevsky<br/>
     ]]></string>
+
+    <string name="no_title_error">Title is required</string>
+    <string name="no_owner_error">Owner\'s name is required</string>
+
 
     <string name="com_parse_ui_logo_content_description">Logo</string>
     <string name="com_parse_ui_progress_dialog_text">Loading…</string>
@@ -99,12 +105,12 @@
     <string name="parse_client_key">M6unV2mvfdN7e24AnoJ9GTE67YjWTf0jZI7Ky3LZ</string>
 
     <string name="debt_title_hint">Title</string>
-    <string name="debt_owner_hint">Owner (or search for contact below)</string>
-    <string name="debt_phone_hint">Owners phone number</string>
-    <string name="debt_desc_hint">Description</string>
+    <string name="debt_owner_hint">Owner(or find above)</string>
+    <string name="debt_phone_hint">Owner\'s phone</string>
+    <string name="debt_desc_hint">Notes</string>
     <string name="remindCheckBox_text">Reminder</string>
 
-    <string name="findContact">find person&#8230;</string>
+    <string name="findContact">Search in contacts</string>
     <string name="app_slogan">Manage your debts - easily!</string>
     <string name="remind_button_text">Set reminder</string>
 

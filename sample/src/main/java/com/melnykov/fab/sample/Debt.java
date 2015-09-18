@@ -15,33 +15,33 @@ import java.util.UUID;
 @ParseClassName("Debt")
 public class Debt extends ParseObject {
 
-    public static final String KEY_UUID = "uuid";
-    public static final String KEY_IS_DRAFT = "isDraft";
-    public static final String KEY_AUTHOR = "author";
-    public static final String KEY_AUTHOR_NAME = "authorName";
-    public static final String KEY_AUTHOR_PHONE = "authorPhone";
-    public static final String KEY_OTHER_UUID = "origUuid";
-    public static final String KEY_DUE_DATE = "dueDate";
-    public static final String KEY_DESCRIPTION = "description";
-    public static final String KEY_TITLE = "title";
-    public static final String KEY_OWNER = "owner";
-    public static final String KEY_STATUS = "status";
-    public static final String KEY_PHONE = "phone";
-    public static final String KEY_TAB_TAG = "tabTag";
+    static final String KEY_UUID = "uuid";
+    static final String KEY_IS_DRAFT = "isDraft";
+    static final String KEY_AUTHOR = "author";
+    static final String KEY_AUTHOR_NAME = "authorName";
+    static final String KEY_AUTHOR_PHONE = "authorPhone";
+     static final String KEY_OTHER_UUID = "origUuid";
+     static final String KEY_DUE_DATE = "dueDate";
+     static final String KEY_DESCRIPTION = "description";
+     static final String KEY_TITLE = "title";
+     static final String KEY_OWNER = "owner";
+     static final String KEY_STATUS = "status";
+     static final String KEY_PHONE = "phone";
+     static final String KEY_TAB_TAG = "tabTag";
 
-    public static final String I_OWE_TAG = "iOwe";
-    public static final String OWE_ME_TAG = "oweMe";
+     static final String I_OWE_TAG = "iOwe";
+     static final String OWE_ME_TAG = "oweMe";
 
-    public static final int STATUS_CREATED = 1;
-    public static final int STATUS_PENDING = 2;
-    public static final int STATUS_CONFIRMED = 3;
-    public static final int STATUS_RETURNED = 4;
+     static final int STATUS_CREATED = 1;
+     static final int STATUS_PENDING = 2;
+     static final int STATUS_CONFIRMED = 3;
+     static final int STATUS_RETURNED = 4;
 
-    public String getTabTag() {
+     String getTabTag() {
         return getString(KEY_TAB_TAG);
     }
 
-    public void setTabTag(String tabTag) {
+     void setTabTag(String tabTag) {
         if (tabTag != null) {
             put(KEY_TAB_TAG, tabTag);
         } else {
@@ -49,11 +49,11 @@ public class Debt extends ParseObject {
         }
     }
 
-    public String getTitle() {
+     String getTitle() {
         return getString(KEY_TITLE);
     }
 
-    public void setTitle(String title) {
+     void setTitle(String title) {
         if (title != null) {
             put(KEY_TITLE, title.trim());
         } else {
@@ -61,11 +61,11 @@ public class Debt extends ParseObject {
         }
     }
 
-    public String getOwner() {
+     String getOwner() {
         return getString(KEY_OWNER);
     }
 
-    public void setOwner(String owner) {
+     void setOwner(String owner) {
         if (owner != null) {
             put(KEY_OWNER, owner.trim());
         } else {
@@ -73,19 +73,19 @@ public class Debt extends ParseObject {
         }
     }
 
-    public int getStatus() {
+     int getStatus() {
         return getInt(KEY_STATUS);
     }
 
-    public void setStatus(int status) {
+     void setStatus(int status) {
             put(KEY_STATUS, status);
     }
 
-    public String getPhone() {
+     String getPhone() {
         return getString(KEY_PHONE);
     }
 
-    public void setPhone(String phone, String userCountry) {
+     void setPhone(String phone, String userCountry) {
         if (phone != null) {
             // Format phone number to E164 standard to use it as a unique identifier
             put(KEY_PHONE, formatToE164(phone, userCountry).trim());
@@ -110,11 +110,11 @@ public class Debt extends ParseObject {
     }
 
 
-    public String getDescription() {
+     String getDescription() {
         return getString(KEY_DESCRIPTION);
     }
 
-    public void setDescription(String description) {
+     void setDescription(String description) {
         if (description != null) {
             put(KEY_DESCRIPTION, description.trim());
         } else {
@@ -122,11 +122,11 @@ public class Debt extends ParseObject {
         }
     }
 
-    public Date getDueDate() {
+     Date getDueDate() {
         return getDate(KEY_DUE_DATE);
     }
 
-    public void setDueDate(Date dueDate) {
+     void setDueDate(Date dueDate) {
         if (dueDate != null) {
             put(KEY_DUE_DATE, dueDate);
         } else {
@@ -135,11 +135,11 @@ public class Debt extends ParseObject {
     }
 
     @Deprecated
-    public ParseUser getAuthor() {
+     ParseUser getAuthor() {
         return getParseUser(KEY_AUTHOR);
     }
 
-    public void setAuthor(ParseUser currentUser) {
+     void setAuthor(ParseUser currentUser) {
         if (currentUser != null) {
             put(KEY_AUTHOR, currentUser);
         } else {
@@ -147,11 +147,11 @@ public class Debt extends ParseObject {
         }
     }
 
-    public String getAuthorName() {
+     String getAuthorName() {
         return getString(KEY_AUTHOR_NAME);
     }
 
-    public void setAuthorName(String authorName) {
+     void setAuthorName(String authorName) {
         if (authorName != null) {
             put(KEY_AUTHOR_NAME, authorName.trim());
         } else {
@@ -159,11 +159,11 @@ public class Debt extends ParseObject {
         }
     }
 
-    public String getAuthorPhone() {
+     String getAuthorPhone() {
         return getString(KEY_AUTHOR_PHONE);
     }
 
-    public void setAuthorPhone(String authorPhone) {
+     void setAuthorPhone(String authorPhone) {
         if (authorPhone != null) {
             put(KEY_AUTHOR_PHONE, authorPhone.trim());
         } else {
@@ -171,11 +171,11 @@ public class Debt extends ParseObject {
         }
     }
 
-    public String getOtherUuid() {
+     String getOtherUuid() {
         return getString(KEY_OTHER_UUID);
     }
 
-    public void setOtherUuid(String otherUuid) {
+     void setOtherUuid(String otherUuid) {
         if (otherUuid != null) {
             put(KEY_OTHER_UUID, otherUuid.trim());
         } else {
@@ -183,24 +183,24 @@ public class Debt extends ParseObject {
         }
     }
 
-    public boolean isDraft() {
+     boolean isDraft() {
         return getBoolean(KEY_IS_DRAFT);
     }
 
-    public void setDraft(boolean isDraft) {
+     void setDraft(boolean isDraft) {
         put(KEY_IS_DRAFT, isDraft);
     }
 
-    public void setUuidString() {
+     void setUuidString() {
         UUID uuid = UUID.randomUUID();
         put(KEY_UUID, uuid.toString());
     }
 
-    public String getUuidString() {
+     String getUuidString() {
         return getString(KEY_UUID);
     }
 
-    public static ParseQuery<Debt> getQuery() {
+     static ParseQuery<Debt> getQuery() {
         return ParseQuery.getQuery(Debt.class);
     }
 }

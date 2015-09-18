@@ -1,87 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/debt_prompt"
-        android:textSize="18sp" />
-
-    <EditText
-        android:id="@+id/debt_title"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/debt_title_hint"
-        android:paddingTop="30dp"
-        android:inputType="textCapSentences"/>
-
-    <EditText
-        android:id="@+id/debt_owner"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/debt_owner_hint"
-        android:paddingTop="30dp"
-        android:inputType="textPersonName"/>
-
-    <EditText
-        android:id="@+id/debt_phone"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/debt_phone_hint"
-        android:paddingTop="30dp"
-        android:inputType="phone"/>
-
-    <SearchView
-        android:id="@+id/debt_contact_search"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-
-    <EditText
-        android:id="@+id/debt_desc"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/debt_desc_hint"
-        android:paddingTop="30dp"
-        android:inputType="textCapSentences"/>
-
-    <LinearLayout
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:baselineAligned="false"
-        android:gravity="bottom"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <CheckBox
-            android:id="@+id/remind_checkbox"
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/debt_title"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:checked="false"
-            android:text="@string/remindCheckBox_text" />
+            android:hint="@string/debt_title_hint"
+            android:inputType="textCapSentences"
+            android:paddingTop="30dp" />
+
+        <EditText
+            android:id="@+id/debt_owner"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/debt_owner_hint"
+            android:inputType="textPersonName"
+            android:paddingTop="30dp" />
+
+        <EditText
+            android:id="@+id/debt_phone"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/debt_phone_hint"
+            android:inputType="phone"
+            android:paddingTop="30dp" />
+
+        <!--<SearchView-->
+            <!--android:id="@+id/debt_contact_search"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:paddingTop="30dp" />-->
+
+        <EditText
+            android:id="@+id/debt_desc"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/debt_desc_hint"
+            android:inputType="textCapSentences"
+            android:paddingTop="30dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:paddingBottom="30dp"
+            android:paddingTop="30dp">
+
+            <CheckBox
+                android:id="@+id/remind_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:checked="false"
+                android:text="@string/remindCheckBox_text" />
+
+            <Button
+                android:id="@+id/remind_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="5"
+                android:text="@string/remind_button_text" />
+        </LinearLayout>
 
         <Button
-            android:id="@+id/remind_button"
-            android:layout_width="wrap_content"
+            android:id="@+id/save_button"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="5"
+            android:text="@string/save" />
 
-            android:text="@string/remind_button_text" />
+        <Button
+            android:id="@+id/delete_button"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/delete"
+            android:visibility="invisible" />
+
     </LinearLayout>
-
-    <Button
-        android:id="@+id/save_button"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/save" />
-
-    <Button
-        android:id="@+id/delete_button"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/delete"
-        android:visibility="invisible" />
-
-</LinearLayout>
+</ScrollView>

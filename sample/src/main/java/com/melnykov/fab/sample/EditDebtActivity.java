@@ -1,41 +1,44 @@
 package com.melnykov.fab.sample;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.SearchManager;
-import android.app.SearchableInfo;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
-import android.util.Pair;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.ImageSpan;
+import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SearchView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
-import com.google.i18n.phonenumbers.NumberParseException;
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
+import com.parse.DeleteCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParsePush;
@@ -44,16 +47,17 @@ import com.parse.ParseUser;
 import com.parse.SaveCallback;
 import com.parse.SendCallback;
 
-import org.json.JSONObject;
-
-import java.util.Arrays;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.Locale;
 
 
+
 public class EditDebtActivity extends AppCompatActivity {
 
-    /*package*/ static final String ALARM_SCHEME = "timer:";
+    static final String ALARM_SCHEME = "timer:";
     private static final int FLAG_FORCE_BACK_TO_MAIN = 0x00040000;
     private static final int FLAG_SET_ALARM = 0X00020000;
 
@@ -64,13 +68,13 @@ public class EditDebtActivity extends AppCompatActivity {
     private EditText debtTitleText;
     private EditText debtOwnerText;
     private EditText debtPhoneText;
-    private SearchView contactSearchView;
     private EditText debtDescText;
 
     private Debt debt;
     private String debtId;
     private String debtTabTag;
     private boolean isFromPush;
+    private SearchView searchView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +82,7 @@ public class EditDebtActivity extends AppCompatActivity {
         setContentView(R.layout.activity_edit_debt);
 
         fetchExtras();
+        setActionBarTitle();
         initViewHolders();
         prepareDebt();
 
@@ -85,6 +90,22 @@ public class EditDebtActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View v) {
+                if( debtTitleText.getText().toString().trim().equals(""))
+                {
+                    debtTitleText.setError(getString(R.string.no_title_error));
+                    debtTitleText.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
+                    return;
+                }
+                if( debtOwnerText.getText().toString().trim().equals(""))
+                {
+                    debtOwnerText.setError(getString(R.string.no_owner_error));
+                    debtOwnerText.requestFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(debtOwnerText, InputMethodManager.SHOW_IMPLICIT);
+                    return;
+                }
                 debt.setTitle(debtTitleText.getText().toString());
                 debt.setOwner(debtOwnerText.getText().toString());
                 debt.setPhone(debtPhoneText.getText().toString(), getUserCountry(EditDebtActivity.this));
@@ -113,7 +134,7 @@ public class EditDebtActivity extends AppCompatActivity {
                                         sendPushResponse(debt.getOtherUuid(), Debt.STATUS_CONFIRMED);
                                         wrapUp(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
                                     } else if (debt.getPhone() != null) {
-                                        showPushDialog();
+                                        showPushDialog();// TODO: 17/09/2015 check for change
                                     }
                                 } else {
                                     Toast.makeText(getApplicationContext(),
@@ -132,7 +153,15 @@ public class EditDebtActivity extends AppCompatActivity {
                 sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
                 cancelAlarm(debt);
                 // The debt will be deleted eventually but will immediately be excluded from query results.
-                debt.deleteEventually();
+//                debt.deleteEventually();// FIXME: 17/09/2015
+                debt.deleteInBackground(new DeleteCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        if (e != null) {
+                            System.err.println("Not deleted: " + e.getMessage());
+                        }
+                    }
+                });// FIXME: 17/09/2015
                 setResult(Activity.RESULT_OK);
                 finish();
             }
@@ -175,7 +204,16 @@ public class EditDebtActivity extends AppCompatActivity {
             }
         });
 
-        setupSearchView();
+    }
+
+    private void setActionBarTitle() {
+        ActionBar actionBar=getSupportActionBar();
+        if(debtTabTag.equals(Debt.I_OWE_TAG)){
+            actionBar.setTitle(getString(R.string.i_owe_tab_title));
+        }
+        else{
+            actionBar.setTitle(getString(R.string.owe_me_tab_title));
+        }
     }
 
     /**
@@ -185,7 +223,7 @@ public class EditDebtActivity extends AppCompatActivity {
      * @param status    to deliver to the other end
      */
     private void sendPushResponse(String otherUuid, final int status) {
-        if(otherUuid==null){
+        if (otherUuid == null) {
             return;
         }
         ParsePush push = new ParsePush();
@@ -259,7 +297,7 @@ public class EditDebtActivity extends AppCompatActivity {
         debtTitleText = (EditText) findViewById(R.id.debt_title);
         debtOwnerText = (EditText) findViewById(R.id.debt_owner);
         debtPhoneText = (EditText) findViewById(R.id.debt_phone);
-        contactSearchView = (SearchView) findViewById(R.id.debt_contact_search);
+//        contactSearchView = (SearchView) findViewById(R.id.debt_contact_search);
         debtDescText = (EditText) findViewById(R.id.debt_desc);
         saveButton = (Button) findViewById(R.id.save_button);
         deleteButton = (Button) findViewById(R.id.delete_button);
@@ -309,7 +347,7 @@ public class EditDebtActivity extends AppCompatActivity {
                     debtTitleText.setText(debt.getTitle());
                     debtOwnerText.setText(debt.getOwner());
                     debtPhoneText.setText(debt.getPhone());
-                    contactSearchView.setQuery(debt.getOwner(), false);
+                    searchView.setQuery(debt.getOwner(), false);
                     debtDescText.setText(debt.getDescription());
                     Date dueDate = debt.getDueDate();
                     if (dueDate != null) {
@@ -364,10 +402,10 @@ public class EditDebtActivity extends AppCompatActivity {
     }
 
     private void returnToMain(Debt debt) {
-        Intent i = new Intent(getApplicationContext(), MainActivity.class);
-//        i.putExtra(Debt.KEY_UUID, debt.getUuidString());// REMOVE: 16/09/2015
-        i.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
-        startActivity(i);
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+//        intent.putExtra(Debt.KEY_TAB_TAG, debt.getUuidString());// REMOVE: 16/09/2015
+        intent.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
+        startActivity(intent);
     }
 /*
     @Override
@@ -378,11 +416,85 @@ public class EditDebtActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }*/// REMOVE: 08/09/2015
 
-    private void setupSearchView() {
-        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchableInfo searchableInfo = searchManager.getSearchableInfo(getComponentName());
-        contactSearchView.setSearchableInfo(searchableInfo);
-        contactSearchView.setIconified(false);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.edit_debt, menu);
+        setupSearch(menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void setupSearch(Menu menu) {
+        SearchManager searchManager =
+                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchView =
+                (SearchView) menu.findItem(R.id.search).getActionView();
+        setSearchTextColors();
+        searchView.setImeOptions(EditorInfo.IME_ACTION_NEXT);// TODO: 18/09/2015 fix
+        searchView.setSearchableInfo(
+                searchManager.getSearchableInfo(getComponentName()));
+        setSearchIcons();
+    }
+
+    private void setSearchTextColors() {
+        LinearLayout linearLayout1 = (LinearLayout) searchView.getChildAt(0);
+        LinearLayout linearLayout2 = (LinearLayout) linearLayout1.getChildAt(2);
+        LinearLayout linearLayout3 = (LinearLayout) linearLayout2.getChildAt(1);
+        AutoCompleteTextView autoComplete = (AutoCompleteTextView) linearLayout3.getChildAt(0);
+        //Set the input text color
+        autoComplete.setTextColor(Color.WHITE);
+        // set the hint text color
+        autoComplete.setHintTextColor(Color.WHITE);
+    }
+
+    private void setSearchIcons() {
+        try {
+            Field searchField = SearchView.class.getDeclaredField("mCloseButton");
+            searchField.setAccessible(true);
+            ImageView closeBtn = (ImageView) searchField.get(searchView);
+            closeBtn.setImageResource(R.drawable.ic_close_white_24dp);
+
+            searchField = SearchView.class.getDeclaredField("mVoiceButton");
+            searchField.setAccessible(true);
+            ImageView voiceBtn = (ImageView) searchField.get(searchView);
+            voiceBtn.setImageResource(R.drawable.ic_keyboard_voice_white_24dp);
+
+            searchField = SearchView.class.getDeclaredField("mSearchButton");
+            searchField.setAccessible(true);
+            ImageView searchButton = (ImageView) searchField.get(searchView);
+            searchButton.setImageResource(R.drawable.ic_search_white_24dp);
+
+            // Accessing the SearchAutoComplete
+            int queryTextViewId = getResources().getIdentifier("android:id/search_src_text", null, null);
+            View autoComplete = searchView.findViewById(queryTextViewId);
+
+            Class<?> clazz = Class.forName("android.widget.SearchView$SearchAutoComplete");
+
+            SpannableStringBuilder stopHint = new SpannableStringBuilder("   ");
+            stopHint.append(getString(R.string.findContact));
+
+            // Add the icon as an spannable
+            Drawable searchIcon = getResources().getDrawable(R.drawable.ic_search_white_24dp);
+            Method textSizeMethod = clazz.getMethod("getTextSize");
+            Float rawTextSize = (Float) textSizeMethod.invoke(autoComplete);
+            int textSize = (int) (rawTextSize * 1.25);
+            searchIcon.setBounds(0, 0, textSize, textSize);
+            stopHint.setSpan(new ImageSpan(searchIcon), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            // Set the new hint text
+            Method setHintMethod = clazz.getMethod("setHint", CharSequence.class);
+            setHintMethod.invoke(autoComplete, stopHint);
+
+        } catch (NoSuchFieldException e) {
+            Log.e("SearchView", e.getMessage(), e);
+        } catch (IllegalAccessException e) {
+            Log.e("SearchView", e.getMessage(), e);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -393,10 +505,17 @@ public class EditDebtActivity extends AppCompatActivity {
             debtOwnerText.setText(displayName);
             String phone = getPhoneNumber(displayName);
             debtPhoneText.setText(phone);
+            debtTitleText.requestFocus();
+            debtTitleText.setNextFocusDownId(R.id.debt_desc);
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) { // REMOVE: 14/09/2015
             // handles a search query
             String query = intent.getStringExtra(SearchManager.QUERY);
 //            debtOwnerText.setText("should search for query: '" + query + "'...");
+            debtTitleText.requestFocus();
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
         }
     }
 
