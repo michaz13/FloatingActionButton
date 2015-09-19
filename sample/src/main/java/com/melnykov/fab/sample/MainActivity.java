@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
 //                                iOweViewFragmentWithTag = (ListViewFragmentIOwe) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
 //                            } else {
                             if (iOweViewFragment == null) {
-                                iOweViewFragment = new ListViewFragmentIOwe();
+                                iOweViewFragment = new ListViewFragmentIOwe();// TODO: 9/18/2015 update on login
                             }
                             fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
 
