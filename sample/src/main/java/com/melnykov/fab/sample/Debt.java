@@ -10,6 +10,7 @@ import com.parse.ParseQuery;
 import com.parse.ParseUser;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.UUID;
 
 @ParseClassName("Debt")
@@ -20,28 +21,28 @@ public class Debt extends ParseObject {
     static final String KEY_AUTHOR = "author";
     static final String KEY_AUTHOR_NAME = "authorName";
     static final String KEY_AUTHOR_PHONE = "authorPhone";
-     static final String KEY_OTHER_UUID = "origUuid";
-     static final String KEY_DUE_DATE = "dueDate";
-     static final String KEY_DESCRIPTION = "description";
-     static final String KEY_TITLE = "title";
-     static final String KEY_OWNER = "owner";
-     static final String KEY_STATUS = "status";
-     static final String KEY_PHONE = "phone";
-     static final String KEY_TAB_TAG = "tabTag";
+    static final String KEY_OTHER_UUID = "origUuid";
+    static final String KEY_DUE_DATE = "dueDate";
+    static final String KEY_DESCRIPTION = "description";
+    static final String KEY_TITLE = "title";
+    static final String KEY_OWNER = "owner";
+    static final String KEY_STATUS = "status";
+    static final String KEY_PHONE = "phone";
+    static final String KEY_TAB_TAG = "tabTag";
 
-     static final String I_OWE_TAG = "iOwe";
-     static final String OWE_ME_TAG = "oweMe";
+    static final String I_OWE_TAG = "iOwe";
+    static final String OWE_ME_TAG = "oweMe";
 
-     static final int STATUS_CREATED = 1;
-     static final int STATUS_PENDING = 2;
-     static final int STATUS_CONFIRMED = 3;
-     static final int STATUS_RETURNED = 4;
+    static final int STATUS_CREATED = 1;
+    static final int STATUS_PENDING = 2;
+    static final int STATUS_CONFIRMED = 3;
+    static final int STATUS_RETURNED = 4;
 
-     String getTabTag() {
+    String getTabTag() {
         return getString(KEY_TAB_TAG);
     }
 
-     void setTabTag(String tabTag) {
+    void setTabTag(String tabTag) {
         if (tabTag != null) {
             put(KEY_TAB_TAG, tabTag);
         } else {
@@ -49,44 +50,44 @@ public class Debt extends ParseObject {
         }
     }
 
-     String getTitle() {
+    String getTitle() {
         return getString(KEY_TITLE);
     }
 
-     void setTitle(String title) {
-        if (title != null) {
+    void setTitle(String title) {
+        if (title != null && title.length() > 0) {
             put(KEY_TITLE, title.trim());
         } else {
             remove(KEY_TITLE);
         }
     }
 
-     String getOwner() {
+    String getOwner() {
         return getString(KEY_OWNER);
     }
 
-     void setOwner(String owner) {
-        if (owner != null) {
+    void setOwner(String owner) {
+        if (owner != null && owner.length() > 0) {
             put(KEY_OWNER, owner.trim());
         } else {
             remove(KEY_OWNER);
         }
     }
 
-     int getStatus() {
+    int getStatus() {
         return getInt(KEY_STATUS);
     }
 
-     void setStatus(int status) {
-            put(KEY_STATUS, status);
+    void setStatus(int status) {
+        put(KEY_STATUS, status);
     }
 
-     String getPhone() {
+    String getPhone() {
         return getString(KEY_PHONE);
     }
 
-     void setPhone(String phone, String userCountry) {
-        if (phone != null) {
+    void setPhone(String phone, String userCountry) {
+        if (phone != null && phone.length() > 0) {
             // Format phone number to E164 standard to use it as a unique identifier
             put(KEY_PHONE, formatToE164(phone, userCountry).trim());
         } else {
@@ -110,23 +111,23 @@ public class Debt extends ParseObject {
     }
 
 
-     String getDescription() {
+    String getDescription() {
         return getString(KEY_DESCRIPTION);
     }
 
-     void setDescription(String description) {
-        if (description != null) {
+    void setDescription(String description) {
+        if (description != null && description.length() > 0) {
             put(KEY_DESCRIPTION, description.trim());
         } else {
             remove(KEY_DESCRIPTION);
         }
     }
 
-     Date getDueDate() {
+    Date getDueDate() {
         return getDate(KEY_DUE_DATE);
     }
 
-     void setDueDate(Date dueDate) {
+    void setDueDate(Date dueDate) {
         if (dueDate != null) {
             put(KEY_DUE_DATE, dueDate);
         } else {
@@ -135,11 +136,11 @@ public class Debt extends ParseObject {
     }
 
     @Deprecated
-     ParseUser getAuthor() {
+    ParseUser getAuthor() {
         return getParseUser(KEY_AUTHOR);
     }
 
-     void setAuthor(ParseUser currentUser) {
+    void setAuthor(ParseUser currentUser) {
         if (currentUser != null) {
             put(KEY_AUTHOR, currentUser);
         } else {
@@ -147,60 +148,81 @@ public class Debt extends ParseObject {
         }
     }
 
-     String getAuthorName() {
+    String getAuthorName() {
         return getString(KEY_AUTHOR_NAME);
     }
 
-     void setAuthorName(String authorName) {
-        if (authorName != null) {
+    void setAuthorName(String authorName) {
+        if (authorName != null && authorName.length() > 0) {
             put(KEY_AUTHOR_NAME, authorName.trim());
         } else {
             remove(KEY_AUTHOR_NAME);
         }
     }
 
-     String getAuthorPhone() {
+    String getAuthorPhone() {
         return getString(KEY_AUTHOR_PHONE);
     }
 
-     void setAuthorPhone(String authorPhone) {
-        if (authorPhone != null) {
+    void setAuthorPhone(String authorPhone) {
+        if (authorPhone != null && authorPhone.length() > 0) {
             put(KEY_AUTHOR_PHONE, authorPhone.trim());
         } else {
             remove(KEY_AUTHOR_PHONE);
         }
     }
 
-     String getOtherUuid() {
+    String getOtherUuid() {
         return getString(KEY_OTHER_UUID);
     }
 
-     void setOtherUuid(String otherUuid) {
-        if (otherUuid != null) {
+    void setOtherUuid(String otherUuid) {
+        if (otherUuid != null && otherUuid.length() > 0) {
             put(KEY_OTHER_UUID, otherUuid.trim());
         } else {
             remove(KEY_OTHER_UUID);
         }
     }
 
-     boolean isDraft() {
+    boolean isDraft() {
         return getBoolean(KEY_IS_DRAFT);
     }
 
-     void setDraft(boolean isDraft) {
+    void setDraft(boolean isDraft) {
         put(KEY_IS_DRAFT, isDraft);
     }
 
-     void setUuidString() {
+    void setUuidString() {
         UUID uuid = UUID.randomUUID();
         put(KEY_UUID, uuid.toString());
     }
 
-     String getUuidString() {
+    String getUuidString() {
         return getString(KEY_UUID);
     }
 
-     static ParseQuery<Debt> getQuery() {
+    static ParseQuery<Debt> getQuery() {
         return ParseQuery.getQuery(Debt.class);
+    }
+
+    boolean equals(Debt debt) {
+        for (Iterator it = debt.keySet().iterator(); it.hasNext(); ) {
+            Object keyObj = it.next();
+            String key = keyObj.toString();
+            if (!get(key).equals(debt.get(key))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    Debt createClone() {
+        Debt copy = new Debt();
+        for (Iterator it = copy.keySet().iterator(); it.hasNext(); ) {
+            Object keyObj = it.next();
+            String key = keyObj.toString();
+            put(key.toString(), copy.get(key.toString()));
+        }
+        return copy;
     }
 }

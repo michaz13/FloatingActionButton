@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         // Check if we have a real user
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             // Sync data to Parse
-            syncDebtsToParse(!SHOW_LOGIN_ON_ERROR);
+            syncDebtsToParse(!SHOW_LOGIN_ON_ERROR);// TODO: 19/09/2015 make sure it's called after on result from login, so no accidental debts are uploaded
             // Update the logged in label info
             updateLoggedInInfo();
         }
@@ -323,8 +323,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
                 subscribeToPush();
-                // If the user is new, sync data to Parse,
-                // else get the current list from Parse
+                // If the user is new, sync data to Parse, otherwise get the current list from Parse
                 if (ParseUser.getCurrentUser().isNew()) {
                     syncDebtsToParse(SHOW_LOGIN_ON_ERROR);// FIXME: 06/09/2015 add if
                 } else {

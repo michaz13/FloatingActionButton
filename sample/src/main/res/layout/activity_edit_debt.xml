@@ -16,7 +16,8 @@
             android:layout_height="wrap_content"
             android:hint="@string/debt_title_hint"
             android:inputType="textCapSentences"
-            android:paddingTop="30dp" />
+            android:paddingTop="30dp"
+            android:nextFocusDown="@+id/debt_owner"/>
 
         <EditText
             android:id="@+id/debt_owner"
@@ -24,7 +25,8 @@
             android:layout_height="wrap_content"
             android:hint="@string/debt_owner_hint"
             android:inputType="textPersonName"
-            android:paddingTop="30dp" />
+            android:paddingTop="30dp"
+            android:nextFocusDown="@+id/debt_phone"/>
 
         <EditText
             android:id="@+id/debt_phone"
@@ -32,7 +34,8 @@
             android:layout_height="wrap_content"
             android:hint="@string/debt_phone_hint"
             android:inputType="phone"
-            android:paddingTop="30dp" />
+            android:paddingTop="30dp"
+            android:nextFocusDown="@+id/debt_desc"/>
 
         <!--<SearchView-->
             <!--android:id="@+id/debt_contact_search"-->
