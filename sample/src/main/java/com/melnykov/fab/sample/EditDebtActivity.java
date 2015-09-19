@@ -230,7 +230,7 @@ public class EditDebtActivity extends AppCompatActivity {
         return true;
     }
 
-    private void setActionBarTitle() {
+    private void setActionBarTitle() {//
         ActionBar actionBar = getSupportActionBar();
         if (debtTabTag.equals(Debt.I_OWE_TAG)) {
             actionBar.setTitle(getString(R.string.i_owe_tab_title));
