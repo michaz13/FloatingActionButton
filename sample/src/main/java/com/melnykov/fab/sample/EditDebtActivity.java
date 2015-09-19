@@ -88,7 +88,17 @@ public class EditDebtActivity extends AppCompatActivity {
         fetchExtras();
         setActionBarTitle();
         initViewHolders();
-        prepareDebtForEditing();
+        try {
+            prepareDebtForEditing();
+        } catch (ParseException e) {
+            e.printStackTrace();// REMOVE: 19/09/2015
+            Toast.makeText(EditDebtActivity.this, "Parse error: "+ e.getMessage(), Toast.LENGTH_LONG).show();
+            setResult(RESULT_CANCELED);
+            finish();
+            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+            intent.putExtra(Debt.KEY_TAB_TAG, debtTabTag);
+            startActivity(intent);
+        }
 
         saveButton.setOnClickListener(new OnClickListener() {
 
@@ -113,15 +123,15 @@ public class EditDebtActivity extends AppCompatActivity {
                 sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
                 cancelAlarm(debt);
                 // The debt will be deleted eventually but will immediately be excluded from query results.
-//                debt.deleteEventually();// FIXME: 17/09/2015
-                debt.deleteInBackground(new DeleteCallback() {
+                debt.deleteEventually();// FIXME: 17/09/2015
+/*                debt.deleteInBackground(new DeleteCallback() {
                     @Override
                     public void done(ParseException e) {
                         if (e != null) {
                             System.err.println("Not deleted: " + e.getMessage());
                         }
                     }
-                });// FIXME: 17/09/2015
+                });*/// FIXME: 17/09/2015
                 setResult(Activity.RESULT_OK);
                 finish();
             }
@@ -316,7 +326,7 @@ public class EditDebtActivity extends AppCompatActivity {
         builder.show();
     }
 
-    private void prepareDebtForEditing() {
+    private void prepareDebtForEditing() throws ParseException {
         if (isFromPush) {
             isNew = false;
             cloneDebtFromPush();
@@ -405,64 +415,54 @@ public class EditDebtActivity extends AppCompatActivity {
         });
     }
 
-    private void loadExistingDebt() {
+    private void loadExistingDebt() throws ParseException {
         ParseQuery<Debt> query = Debt.getQuery();
         query.fromLocalDatastore();
         query.whereEqualTo(Debt.KEY_UUID, debtId);
-        query.getFirstInBackground(new GetCallback<Debt>() {
-
-            @Override
-            public void done(Debt object, ParseException e) {// FIXME: 19/09/2015 bring to foreground
-                if (!isFinishing()) {
-                    debt = object;
-                    debtTitleText.setText(debt.getTitle());
-                    debtOwnerText.setText(debt.getOwner());
-                    debtPhoneText.setText(debt.getPhone());
-                    searchView.setQuery(debt.getOwner(), false);
-                    debtDescText.setText(debt.getDescription());
-                    Date dueDate = debt.getDueDate();
-                    if (dueDate != null) {
-                        remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
-                        remindCheckBox.setChecked(true);
-                    }
-                    deleteButton.setVisibility(View.VISIBLE);
-                    beforeChange = debt.createClone();
-                }
+        Debt object = query.getFirst();
+        if (!isFinishing()) {
+            debt = object;
+            debtTitleText.setText(debt.getTitle());
+            debtOwnerText.setText(debt.getOwner());
+            debtPhoneText.setText(debt.getPhone());
+            debtDescText.setText(debt.getDescription());
+            Date dueDate = debt.getDueDate();
+            if (dueDate != null) {
+                remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+                remindCheckBox.setChecked(true);
             }
-        });
+            deleteButton.setVisibility(View.VISIBLE);
+            beforeChange = debt.createClone();
+        }
     }
 
-    private void cloneDebtFromPush() {
+    private void cloneDebtFromPush() throws ParseException {
         debt = new Debt();
         debt.setUuidString();
 
         ParseQuery<Debt> query = Debt.getQuery();
         query.whereEqualTo(Debt.KEY_UUID, debtId);
-        query.getFirstInBackground(new GetCallback<Debt>() {
 
-            @Override
-            public void done(Debt other, ParseException e) {// FIXME: 19/09/2015 bring to foreground
-
-                if (!isFinishing()) {
-                    debt.setOtherUuid(debtId);
-                    debt.setTabTag(reverseTag(other.getTabTag()));
-                    debtTitleText.setText(other.getTitle());
-                    debtOwnerText.setText(other.getAuthorName());
-                    debtPhoneText.setText(other.getAuthorPhone());
-                    debtDescText.setText(other.getDescription());
-                    Date dueDate = other.getDueDate();
-                    if (dueDate != null) {
-                        debt.setDueDate(dueDate);
-                        remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
-                        remindCheckBox.setChecked(true);
-                    }
-                    saveButton.setText(R.string.add_debt);
-                    deleteButton.setText(R.string.ignore);
-                    deleteButton.setVisibility(View.VISIBLE);
-                    beforeChange = debt.createClone();
-                }
+        Debt other = query.getFirst();
+        if (!isFinishing()) {
+            debt.setOtherUuid(debtId);
+            debt.setTabTag(reverseTag(other.getTabTag()));
+            debtTitleText.setText(other.getTitle());
+            debtOwnerText.setText(other.getAuthorName());
+            debtPhoneText.setText(other.getAuthorPhone());
+            debtDescText.setText(other.getDescription());
+            Date dueDate = other.getDueDate();
+            if (dueDate != null) {
+                debt.setDueDate(dueDate);
+                remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+                remindCheckBox.setChecked(true);
             }
-        });
+            saveButton.setText(R.string.add_debt);
+            deleteButton.setText(R.string.ignore);
+            deleteButton.setVisibility(View.VISIBLE);
+            beforeChange = debt.createClone();
+        }
+
     }
 
     private String reverseTag(String tabTag) {

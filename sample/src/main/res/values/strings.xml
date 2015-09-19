@@ -105,7 +105,7 @@
     <string name="parse_client_key">M6unV2mvfdN7e24AnoJ9GTE67YjWTf0jZI7Ky3LZ</string>
 
     <string name="debt_title_hint">Title</string>
-    <string name="debt_owner_hint">Owner(or find above)</string>
+    <string name="debt_owner_hint">Owner (or find above)</string>
     <string name="debt_phone_hint">Owner\'s phone</string>
     <string name="debt_desc_hint">Notes</string>
     <string name="remindCheckBox_text">Reminder</string>
