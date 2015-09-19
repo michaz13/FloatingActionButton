@@ -88,11 +88,16 @@ public class EditDebtActivity extends AppCompatActivity {
         fetchExtras();
         setActionBarTitle();
         initViewHolders();
+
+        if (!isNew) {
+            clearViewFocus(debtTitleText);
+        }
+
         try {
             prepareDebtForEditing();
         } catch (ParseException e) {
             e.printStackTrace();// REMOVE: 19/09/2015
-            Toast.makeText(EditDebtActivity.this, "Parse error: "+ e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(EditDebtActivity.this, "Parse error: " + e.getMessage(), Toast.LENGTH_LONG).show();
             setResult(RESULT_CANCELED);
             finish();
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -338,9 +343,8 @@ public class EditDebtActivity extends AppCompatActivity {
             debt = new Debt();
             debt.setUuidString();
             debt.setTabTag(debtTabTag);
-            beforeChange = debt.createClone();
         }
-
+        beforeChange = debt.clone();
     }
 
     private TextView.OnEditorActionListener onEditorActionListener = new EditText.OnEditorActionListener() {
@@ -420,20 +424,17 @@ public class EditDebtActivity extends AppCompatActivity {
         query.fromLocalDatastore();
         query.whereEqualTo(Debt.KEY_UUID, debtId);
         Debt object = query.getFirst();
-        if (!isFinishing()) {
-            debt = object;
-            debtTitleText.setText(debt.getTitle());
-            debtOwnerText.setText(debt.getOwner());
-            debtPhoneText.setText(debt.getPhone());
-            debtDescText.setText(debt.getDescription());
-            Date dueDate = debt.getDueDate();
-            if (dueDate != null) {
-                remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
-                remindCheckBox.setChecked(true);
-            }
-            deleteButton.setVisibility(View.VISIBLE);
-            beforeChange = debt.createClone();
+        debt = object;
+        debtTitleText.setText(debt.getTitle());
+        debtOwnerText.setText(debt.getOwner());
+        debtPhoneText.setText(debt.getPhone());
+        debtDescText.setText(debt.getDescription());
+        Date dueDate = debt.getDueDate();
+        if (dueDate != null) {
+            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+            remindCheckBox.setChecked(true);
         }
+        deleteButton.setVisibility(View.VISIBLE);
     }
 
     private void cloneDebtFromPush() throws ParseException {
@@ -444,25 +445,21 @@ public class EditDebtActivity extends AppCompatActivity {
         query.whereEqualTo(Debt.KEY_UUID, debtId);
 
         Debt other = query.getFirst();
-        if (!isFinishing()) {
-            debt.setOtherUuid(debtId);
-            debt.setTabTag(reverseTag(other.getTabTag()));
-            debtTitleText.setText(other.getTitle());
-            debtOwnerText.setText(other.getAuthorName());
-            debtPhoneText.setText(other.getAuthorPhone());
-            debtDescText.setText(other.getDescription());
-            Date dueDate = other.getDueDate();
-            if (dueDate != null) {
-                debt.setDueDate(dueDate);
-                remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
-                remindCheckBox.setChecked(true);
-            }
-            saveButton.setText(R.string.add_debt);
-            deleteButton.setText(R.string.ignore);
-            deleteButton.setVisibility(View.VISIBLE);
-            beforeChange = debt.createClone();
+        debt.setOtherUuid(debtId);
+        debt.setTabTag(reverseTag(other.getTabTag()));
+        debtTitleText.setText(other.getTitle());
+        debtOwnerText.setText(other.getAuthorName());
+        debtPhoneText.setText(other.getAuthorPhone());
+        debtDescText.setText(other.getDescription());
+        Date dueDate = other.getDueDate();
+        if (dueDate != null) {
+            debt.setDueDate(dueDate);
+            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+            remindCheckBox.setChecked(true);
         }
-
+        saveButton.setText(R.string.add_debt);
+        deleteButton.setText(R.string.ignore);
+        deleteButton.setVisibility(View.VISIBLE);
     }
 
     private String reverseTag(String tabTag) {

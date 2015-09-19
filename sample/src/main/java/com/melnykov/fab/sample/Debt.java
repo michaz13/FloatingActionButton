@@ -11,6 +11,7 @@ import com.parse.ParseUser;
 
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.UUID;
 
 @ParseClassName("Debt")
@@ -205,24 +206,30 @@ public class Debt extends ParseObject {
         return ParseQuery.getQuery(Debt.class);
     }
 
-    boolean equals(Debt debt) {
-        for (Iterator it = debt.keySet().iterator(); it.hasNext(); ) {
+    @Override
+    public boolean equals(Object o) {
+        Debt other = (Debt) o;
+        if (keySet().size() != other.keySet().size()) {
+            return false;
+        }
+        for (Iterator it = other.keySet().iterator(); it.hasNext(); ) {
             Object keyObj = it.next();
             String key = keyObj.toString();
-            if (!get(key).equals(debt.get(key))) {
+            if (!other.get(key).equals(get(key))) {
                 return false;
             }
         }
         return true;
     }
 
-    Debt createClone() {
-        Debt copy = new Debt();
-        for (Iterator it = copy.keySet().iterator(); it.hasNext(); ) {
+    @Override
+    protected Debt clone() {
+        Debt clone = new Debt();
+        for (Iterator it = keySet().iterator(); it.hasNext(); ) {
             Object keyObj = it.next();
             String key = keyObj.toString();
-            put(key.toString(), copy.get(key.toString()));
+            clone.put(key, get(key));
         }
-        return copy;
+        return clone;
     }
 }
