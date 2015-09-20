@@ -8,7 +8,9 @@
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
 
         <EditText
             android:id="@+id/debt_title"
@@ -16,6 +18,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/debt_title_hint"
             android:inputType="textCapSentences"
+            android:windowSoftInputMode="stateHidden"
             android:paddingTop="30dp"
             android:nextFocusDown="@+id/debt_owner"/>
 
@@ -36,12 +39,6 @@
             android:inputType="phone"
             android:paddingTop="30dp"
             android:nextFocusDown="@+id/debt_desc"/>
-
-        <!--<SearchView-->
-            <!--android:id="@+id/debt_contact_search"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:paddingTop="30dp" />-->
 
         <EditText
             android:id="@+id/debt_desc"

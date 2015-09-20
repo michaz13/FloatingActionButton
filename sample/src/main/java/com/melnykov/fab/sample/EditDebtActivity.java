@@ -88,11 +88,6 @@ public class EditDebtActivity extends AppCompatActivity {
         fetchExtras();
         setActionBarTitle();
         initViewHolders();
-
-        if (!isNew) {
-            clearViewFocus(debtTitleText);
-        }
-
         try {
             prepareDebtForEditing();
         } catch (ParseException e) {
@@ -103,6 +98,10 @@ public class EditDebtActivity extends AppCompatActivity {
             Intent intent = new Intent(getApplicationContext(), MainActivity.class);
             intent.putExtra(Debt.KEY_TAB_TAG, debtTabTag);
             startActivity(intent);
+        }
+
+        if(isNew){
+            debtTitleText.requestFocus();
         }
 
         saveButton.setOnClickListener(new OnClickListener() {
@@ -178,7 +177,6 @@ public class EditDebtActivity extends AppCompatActivity {
                         .show();
             }
         });
-
     }
 
     private void saveDebt(final int flags) {
