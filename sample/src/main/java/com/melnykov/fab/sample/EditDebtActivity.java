@@ -40,8 +40,6 @@ import android.widget.Toast;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
-import com.parse.DeleteCallback;
-import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
@@ -316,7 +314,7 @@ public class EditDebtActivity extends AppCompatActivity {
         });
         builder.setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int whichButton) {
-                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone().substring(1)));
                 startActivity(dial);
                 saveDebt(FLAG_SET_ALARM);
             }
@@ -342,7 +340,7 @@ public class EditDebtActivity extends AppCompatActivity {
             debt.setUuidString();
             debt.setTabTag(debtTabTag);
         }
-        beforeChange = debt.clone();
+        beforeChange = debt.createClone();
     }
 
     private TextView.OnEditorActionListener onEditorActionListener = new EditText.OnEditorActionListener() {

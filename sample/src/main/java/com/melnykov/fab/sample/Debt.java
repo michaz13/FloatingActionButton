@@ -206,9 +206,7 @@ public class Debt extends ParseObject {
         return ParseQuery.getQuery(Debt.class);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        Debt other = (Debt) o;
+    boolean equals(Debt other) {
         if (keySet().size() != other.keySet().size()) {
             return false;
         }
@@ -222,8 +220,7 @@ public class Debt extends ParseObject {
         return true;
     }
 
-    @Override
-    protected Debt clone() {
+    Debt createClone() {
         Debt clone = new Debt();
         for (Iterator it = keySet().iterator(); it.hasNext(); ) {
             Object keyObj = it.next();

@@ -34,23 +34,25 @@ public class DueDateAlarm extends BroadcastReceiver {
         }
 
         // Raise the notification about the debt
-        createNotification(context, firstPart + title, preposition + owner, title, uuid, owner, phone);
+        createNotification(context, firstPart + title, preposition + owner, title, uuid, owner, phone, tabTag);
     }
 
     /**
      * Creates and shows notification to the user.
-     *
-     * @param context app context for the intent
+     *  @param context app context for the intent
      * @param title   short content
      * @param text    few more details
      * @param alert   shows on the top bar for one second
      * @param uuid    must be unique
+     * @param tabTag
      */
-    private void createNotification(Context context, String title, String text, String alert, String uuid, String owner, String phone) {
+    private void createNotification(Context context, String title, String text, String alert, String uuid, String owner, String phone, String tabTag) {
         Intent intent = new Intent(context, EditDebtActivity.class);
 //        intent.setFlags(/*Intent.FLAG_ACTIVITY_REORDER_TO_FRONT*/ /*Intent.FLAG_ACTIVITY_SINGLE_TOP | */Intent.FLAG_ACTIVITY_CLEAR_TOP);
         int alarmId = uuid.hashCode();
         intent.putExtra(Debt.KEY_UUID, uuid);
+        intent.putExtra(Debt.KEY_TAB_TAG, tabTag);
+
         PendingIntent notificationIntent = PendingIntent.getActivity(context, 0, intent
                 , PendingIntent.FLAG_UPDATE_CURRENT);
         Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + phone));
