@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,22 +21,22 @@ import com.parse.ParseQueryAdapter;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
+public class ListViewFragment extends android.support.v4.app.Fragment {
 
     // Adapter for the Debts Parse Query
-    ParseQueryAdapter<Debt> debtListAdapterIOwe;
+    ParseQueryAdapter<Debt> debtListAdapter;
 
     // For showing empty and non-empty debt views
-    private ListView debtListViewIOwe;
-    private LinearLayout noDebtsViewIOwe;
+    private ListView debtListView;
+    private LinearLayout noDebtsView;
 
-    private View mRootIOwe;
+    private View mRoot;
 
-    ParseQueryAdapter.QueryFactory<Debt> factoryIOwe;
+    ParseQueryAdapter.QueryFactory<Debt> factory;
 
-    public ListViewFragmentIOwe() {
-        // Set up the Parse query to use in the adapter
-        factoryIOwe = new ParseQueryAdapter.QueryFactory<Debt>() {
+    public ListViewFragment() {
+        // Set up the Parse mQuery to use in the adapter
+        factory = new ParseQueryAdapter.QueryFactory<Debt>() {
             public ParseQuery<Debt> create() {
                 ParseQuery<Debt> query = Debt.getQuery();
                 query.whereEqualTo(Debt.KEY_TAB_TAG, getTag());
@@ -48,30 +47,29 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
         };
     }
 
-    @SuppressLint("InflateParams")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (mRootIOwe != null) {
-            return mRootIOwe;
+        if (mRoot != null) {
+            return mRoot;
         }
 
         View root = inflater.inflate(R.layout.fragment_listview, container, false);
         // Set up the views
-        debtListViewIOwe = (ListView) root.findViewById(android.R.id.list);
-        noDebtsViewIOwe = (LinearLayout) root.findViewById(R.id.no_debts_view);
-        debtListViewIOwe.setEmptyView(noDebtsViewIOwe);
+        debtListView = (ListView) root.findViewById(android.R.id.list);
+        noDebtsView = (LinearLayout) root.findViewById(R.id.no_debts_view);
+        debtListView.setEmptyView(noDebtsView);
 
         // Set up the adapter
-        debtListAdapterIOwe = new DebtListAdapter(getActivity(), factoryIOwe);
+        debtListAdapter = new DebtListAdapter(getActivity(), factory);
 
-        // Attach the query adapter to the view
-        debtListViewIOwe.setAdapter(debtListAdapterIOwe);
+        // Attach the mQuery adapter to the view
+        debtListView.setAdapter(debtListAdapter);
 
-        debtListViewIOwe.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        debtListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view,
                                     int position, long id) {
-                Debt debt = debtListAdapterIOwe.getItem(position);
+                Debt debt = debtListAdapter.getItem(position);
                 openEditView(debt);
             }
         });
@@ -85,7 +83,7 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
                 startActivityForResult(i , MainActivity.EDIT_ACTIVITY_CODE);
             }
         });
-        fab.attachToListView(debtListViewIOwe, new ScrollDirectionListener() {// REMOVE: 07/09/2015 listener
+        fab.attachToListView(debtListView, new ScrollDirectionListener() {// REMOVE: 07/09/2015 listener
             @Override
             public void onScrollDown() {
 
@@ -105,7 +103,7 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
             }
         });
 
-        mRootIOwe = root;
+        mRoot = root;
         return root;
     }
 
@@ -124,11 +122,11 @@ public class ListViewFragmentIOwe extends android.support.v4.app.Fragment {
     }
 
     private void updateView() {
-        debtListAdapterIOwe.loadObjects();// REMOVE: 07/09/2015 ?
-        debtListAdapterIOwe.notifyDataSetChanged();
+        debtListAdapter.loadObjects();// REMOVE: 07/09/2015 ?
+        debtListAdapter.notifyDataSetChanged();
     }
 
     void clearView() {
-        debtListAdapterIOwe.clear();
+        debtListAdapter.clear();
     }
 }

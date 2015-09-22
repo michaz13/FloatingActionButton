@@ -19,6 +19,14 @@ android {
     }
 }
 
+repositories {
+    maven { url "https://jitpack.io" }
+//    mavenCentral() todo
+//    maven { todo
+//        url 'http://oss.sonatype.org/content/repositories/snapshots'
+//    }
+}
+
 dependencies {
     compile project(':library')
     //    compile 'com.android.support:appcompat-v7:22.1.0@aar'
@@ -31,4 +39,6 @@ dependencies {
     compile files('libs/gson-2.3.1.jar')
     compile files('libs/svg-android-1.1.jar')
     compile files('libs/libphonenumber-7.0.9.jar')
+    compile 'com.github.PhilJay:MPAndroidChart:v2.1.4'
+//    compile 'com.github.blackcat27:library:1.0.0-SNAPSHOT' todo
 }

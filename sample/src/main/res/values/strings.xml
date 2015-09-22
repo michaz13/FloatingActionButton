@@ -3,6 +3,7 @@
     <string name="app_name">Yudaleh</string>
     <string name="i_owe_tab_title">I owe :(</string>
     <string name="owe_me_tab_title">Owe me :)</string>
+    <string name="dashboard_tab_title">Dashboard</string>
     <string name="about">About</string>
     <string name="about_body"><![CDATA[
         Yudaleh - debt managing application.<br/>
@@ -15,6 +16,19 @@
     <string name="no_title_error">Title is required</string>
     <string name="no_owner_error">Owner\'s name is required</string>
 
+    <string name="country_prompt">Choose a country</string>
+
+    <string-array name="country_arrays">
+        <item>(Not money)</item>
+        <item>NIS</item>
+        <item>$</item>
+        <item>EURO</item>
+        <item>France</item>
+        <item>Italy</item>
+        <item>Singapore</item>
+        <item>New Zealand</item>
+        <item>India</item>
+    </string-array>
 
     <string name="com_parse_ui_logo_content_description">Logo</string>
     <string name="com_parse_ui_progress_dialog_text">Loading…</string>
@@ -94,6 +108,8 @@
     <string name="add_debt">Add to my debts</string>
     <string name="action_new">New Debt</string>
     <string name="action_sync">Sync</string>
+    <string name="action_chart_mode">Chart Mode</string>
+    <string name="action_list_mode">List Mode</string>
     <string name="action_logout">Log Out</string>
     <string name="action_login">Log In</string>
     <string name="login_title">Please log in or sign up to sync your debts to your account.</string>

@@ -11,7 +11,6 @@ import com.parse.ParseUser;
 
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.UUID;
 
 @ParseClassName("Debt")
@@ -26,10 +25,14 @@ public class Debt extends ParseObject {
     static final String KEY_DUE_DATE = "dueDate";
     static final String KEY_DESCRIPTION = "description";
     static final String KEY_TITLE = "title";
+    static final String KEY_CURRENCY_POS = "currencyPos";
+    static final String KEY_MONEY_AMOUNT = "money";
     static final String KEY_OWNER = "owner";
     static final String KEY_STATUS = "status";
     static final String KEY_PHONE = "phone";
     static final String KEY_TAB_TAG = "tabTag";
+
+    static final int NON_MONEY_DEBT_CURRENCY = 0;
 
     static final String I_OWE_TAG = "iOwe";
     static final String OWE_ME_TAG = "oweMe";
@@ -60,6 +63,36 @@ public class Debt extends ParseObject {
             put(KEY_TITLE, title.trim());
         } else {
             remove(KEY_TITLE);
+        }
+    }
+
+    int getCurrencyPos() {
+        return getInt(KEY_CURRENCY_POS);
+    }
+
+    void setCurrencyPos(int currencyPos) {
+        put(KEY_CURRENCY_POS, currencyPos);
+    }
+
+    int getMoneyAmount() {
+        return getInt(KEY_MONEY_AMOUNT);
+    }
+
+    void setMoneyAmount(int moneyAmount) {
+        put(KEY_MONEY_AMOUNT, moneyAmount);
+    }
+
+    public void setMoneyAmountByTitle() {
+        String title = getTitle();
+        if (title == null) {
+            setMoneyAmount(-1);
+        } else {
+            title = title.replaceAll("[^0-9]+", "");
+            if (title.length() > 0) {
+                setMoneyAmount(Integer.parseInt(title));
+            } else {
+                setMoneyAmount(-1);
+            }
         }
     }
 
@@ -229,4 +262,5 @@ public class Debt extends ParseObject {
         }
         return clone;
     }
+
 }

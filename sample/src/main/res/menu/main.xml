@@ -1,9 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:yourapp="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_chart_mode"
+        android:icon="@drawable/ic_insert_chart_white_24dp"
+        yourapp:showAsAction="ifRoom"
+        android:title="@string/action_chart_mode">
+    </item>
+
+    <item
+        android:id="@+id/action_list_mode"
+        android:icon="@drawable/ic_view_list_white_24dp"
+        yourapp:showAsAction="ifRoom"
+        android:title="@string/action_list_mode">
+    </item>
+
     <item
         android:id="@+id/action_sync"
-        android:icon="@drawable/ic_cloud_upload_white_36dp"
+        android:icon="@drawable/ic_cloud_upload_white_24dp"
         yourapp:showAsAction="ifRoom"
         android:title="@string/action_sync">
     </item>

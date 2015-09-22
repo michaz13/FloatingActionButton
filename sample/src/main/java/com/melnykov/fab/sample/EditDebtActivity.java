@@ -12,6 +12,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v7.app.ActionBar;
@@ -19,6 +20,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.format.DateFormat;
 import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -27,6 +29,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -34,6 +37,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SearchView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,10 +54,13 @@ import com.parse.SendCallback;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Currency;
 import java.util.Date;
 import java.util.Locale;
 
-
+/**
+ * Choosing debt details. Used both for new and for existing cc
+ */
 public class EditDebtActivity extends AppCompatActivity {
 
     static final String ALARM_SCHEME = "timer:";
@@ -69,6 +76,7 @@ public class EditDebtActivity extends AppCompatActivity {
     private EditText debtPhoneText;
     private EditText debtDescText;
     private SearchView searchView;
+    private Spinner spinner1;
 
     private Debt debt;
     private String debtId;
@@ -77,7 +85,12 @@ public class EditDebtActivity extends AppCompatActivity {
     private boolean isNew;
     private boolean isModified;
     private Debt beforeChange;
+    private int currencyPos;
 
+
+    //**********************************************************************************************
+    //**************************************** Lifecycle methods: **********************************
+    //**********************************************************************************************
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -98,7 +111,7 @@ public class EditDebtActivity extends AppCompatActivity {
             startActivity(intent);
         }
 
-        if(isNew){
+        if (isNew) {
             debtTitleText.requestFocus();
         }
 
@@ -111,7 +124,7 @@ public class EditDebtActivity extends AppCompatActivity {
                 }
                 setDebtFieldsAfterEditing();
                 if (debt.getPhone() != null && (isNew || isModified)) {
-                    showPushDialog();// TODO: 17/09/2015 check for change
+                    showPushDialog();
                 } else {
                     saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
                 }
@@ -124,7 +137,7 @@ public class EditDebtActivity extends AppCompatActivity {
             public void onClick(View v) {
                 sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
                 cancelAlarm(debt);
-                // The debt will be deleted eventually but will immediately be excluded from query results.
+                // The debt will be deleted eventually but will immediately be excluded from mQuery results.
                 debt.deleteEventually();// FIXME: 17/09/2015
 /*                debt.deleteInBackground(new DeleteCallback() {
                     @Override
@@ -140,7 +153,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
         });
 
-        remindButton.setOnClickListener(new View.OnClickListener() {
+        remindButton.setOnClickListener(new OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -150,7 +163,7 @@ public class EditDebtActivity extends AppCompatActivity {
                     @Override
                     public void onDateTimeSet(Date date) {
                         date.setSeconds(0);
-                        remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", date.getTime()));
+                        remindButton.setText(DateFormat.format("MM/dd/yy h:mmaa", date.getTime()));
                         remindCheckBox.setChecked(true);
                         debt.setDueDate(date);
                     }
@@ -162,6 +175,11 @@ public class EditDebtActivity extends AppCompatActivity {
                 };
                 Date initDate;
                 Date currDate = debt.getDueDate();
+                Currency currency = Currency.getInstance(Locale.getDefault());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    String info = currency.getDisplayName() + ":" + currency.getSymbol() + ":" + currency.toString();
+                    debtTitleText.setText(info);
+                }
                 if (currDate != null) {
                     initDate = currDate;
                 } else {
@@ -177,6 +195,59 @@ public class EditDebtActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.edit_debt, menu);
+        setupSearch(menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    /**
+     * Extracts the extras from the <code>Intent</code>.
+     */
+    private void fetchExtras() {
+        debtId = getIntent().getStringExtra(Debt.KEY_UUID);
+        debtTabTag = getIntent().getStringExtra(Debt.KEY_TAB_TAG);
+        isFromPush = getIntent().getBooleanExtra("fromPush", false);
+    }
+
+    /**
+     * Set the alarm and finish the activity.
+     *
+     * @param flags FLAG_SET_ALARM for setting the alarm if needed, and FLAG_FORCE_BACK_TO_MAIN for calling {@link MainActivity}.
+     */
+    private void wrapUp(int flags) {
+        if ((flags & FLAG_SET_ALARM) != 0 && debt.getDueDate() != null) {
+            setAlarm(debt);
+        }
+        setResult(Activity.RESULT_OK);
+        finish();
+        if ((flags & FLAG_FORCE_BACK_TO_MAIN) != 0) {
+            returnToMain(debt); // in case the activity was not started for a result
+        }
+    }
+
+    /**
+     * Opens {@link MainActivity}.
+     *
+     * @param debt for the intent's extras.
+     */
+    private void returnToMain(Debt debt) {
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        intent.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
+        startActivity(intent);
+    }
+
+
+    //**********************************************************************************************
+    //**************************************** Debt operation methods: *****************************
+    //**********************************************************************************************
+
+    /**
+     * Pins the <code>Debt</code> in local database and ? todo
+     *
+     * @param flags the <code>flags</code> parameter for the {@link #wrapUp}.
+     */
     private void saveDebt(final int flags) {
         debt.pinInBackground(DebtListApplication.DEBT_GROUP_NAME,
                 new SaveCallback() {
@@ -200,8 +271,14 @@ public class EditDebtActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Updates the debt's details from the text fields.
+     */
     private void setDebtFieldsAfterEditing() {
         debt.setTitle(debtTitleText.getText().toString());
+        debt.setCurrencyPos(currencyPos);
+        debt.setMoneyAmountByTitle();
+        setTitleFormattedAsMoneyAmount(currencyPos);
         debt.setOwner(debtOwnerText.getText().toString());
         debt.setPhone(debtPhoneText.getText().toString(), getUserCountry(EditDebtActivity.this));
         debt.setDescription(debtDescText.getText().toString());
@@ -223,6 +300,31 @@ public class EditDebtActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * In case the debt is money, sets the title to: [money amount] [currency symbol].
+     * Assumes the money amount was already set by {@link Debt#getMoneyAmount()}.
+     *
+     * @param currencyPos the position of the currency symbol in the <code>Spinner</code>.
+     */
+    private void setTitleFormattedAsMoneyAmount(int currencyPos) {
+        if(currencyPos==Debt.NON_MONEY_DEBT_CURRENCY){
+            return;
+        }
+        String currency = spinner1.getItemAtPosition(currencyPos).toString();
+        int amount = debt.getMoneyAmount();
+        if(amount >=0 ) {
+            debt.setTitle(amount + " " + currency);
+        }
+        else{
+            debt.setCurrencyPos(Debt.NON_MONEY_DEBT_CURRENCY);
+        }
+    }
+
+    /**
+     * Make sure all required fields are entered.
+     *
+     * @return <code>true</code> iff all fields are valid.
+     */
     private boolean validateDebtDetails() {
         if (debtTitleText.getText().toString().trim().equals("")) {
             debtTitleText.setError(getString(R.string.no_title_error));
@@ -241,14 +343,85 @@ public class EditDebtActivity extends AppCompatActivity {
         return true;
     }
 
-    private void setActionBarTitle() {//
-        ActionBar actionBar = getSupportActionBar();
-        if (debtTabTag.equals(Debt.I_OWE_TAG)) {
-            actionBar.setTitle(getString(R.string.i_owe_tab_title));
-        } else {
-            actionBar.setTitle(getString(R.string.owe_me_tab_title));
+    /**
+     * Loads the current <code>Debt</code> from parse.
+     *
+     * @throws ParseException
+     */
+    private void loadExistingDebt() throws ParseException {
+        ParseQuery<Debt> query = Debt.getQuery();
+        query.fromLocalDatastore();
+        query.whereEqualTo(Debt.KEY_UUID, debtId);
+        Debt object = query.getFirst();
+        debt = object;
+        debtTitleText.setText(debt.getTitle());
+        spinner1.setSelection(debt.getCurrencyPos());
+        debtOwnerText.setText(debt.getOwner());
+        debtPhoneText.setText(debt.getPhone());
+        debtDescText.setText(debt.getDescription());
+        Date dueDate = debt.getDueDate();
+        if (dueDate != null) {
+            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+            remindCheckBox.setChecked(true);
         }
+        deleteButton.setVisibility(View.VISIBLE);
     }
+
+    /**
+     * Creates a copy of the current <code>Debt</code> with reversed tag.
+     *
+     * @throws ParseException
+     */
+    private void cloneDebtFromPush() throws ParseException {
+        debt = new Debt();
+        debt.setUuidString();
+
+        ParseQuery<Debt> query = Debt.getQuery();
+        query.whereEqualTo(Debt.KEY_UUID, debtId);
+
+        Debt other = query.getFirst();
+        debt.setOtherUuid(debtId);
+        debt.setTabTag(reverseTag(other.getTabTag()));
+        debtTitleText.setText(other.getTitle());
+        debtOwnerText.setText(other.getAuthorName());
+        debtPhoneText.setText(other.getAuthorPhone());
+        debtDescText.setText(other.getDescription());
+        Date dueDate = other.getDueDate();
+        if (dueDate != null) {
+            debt.setDueDate(dueDate);
+            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
+            remindCheckBox.setChecked(true);
+        }
+        saveButton.setText(R.string.add_debt);
+        deleteButton.setText(R.string.ignore);
+        deleteButton.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Load the <code>Debt</code> from Parse or create a new one.
+     *
+     * @throws ParseException
+     */
+    private void prepareDebtForEditing() throws ParseException {
+        if (isFromPush) {
+            isNew = false;
+            cloneDebtFromPush();
+        } else if (debtId != null) {
+            isNew = false;
+            loadExistingDebt();
+        } else {
+            isNew = true;
+            debt = new Debt();
+            debt.setUuidString();
+            debt.setTabTag(debtTabTag);
+        }
+        beforeChange = debt.createClone();
+    }
+
+
+    //**********************************************************************************************
+    //**************************************** Push methods: ***************************************
+    //**********************************************************************************************
 
     /**
      * Synchronize the status of the other end
@@ -280,118 +453,41 @@ public class EditDebtActivity extends AppCompatActivity {
         });
     }
 
-    private void wrapUp(int flags) {
-        if ((flags & FLAG_SET_ALARM) != 0 && debt.getDueDate() != null) {
-            setAlarm(debt);
-        }
-        setResult(Activity.RESULT_OK);
-        finish();
-        if ((flags & FLAG_FORCE_BACK_TO_MAIN) != 0) {
-            returnToMain(debt); // in case the activity was not started for a result
-        }
-    }
-
+    /**
+     * Show a confirmation push notification dialog, with an option to call the owner.
+     */
     private void showPushDialog() {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(EditDebtActivity.this);
         String message;
-        String linkWord;
-        if (debt.getTabTag().equals(Debt.I_OWE_TAG)) {
-            linkWord = "your";
-        } else {
-            linkWord = "his";
-        }
         if (isNew) {
-            message = "Tell " + debt.getOwner() + " about " + linkWord + " debt";
+            message = "Tell " + debt.getOwner() + " about " + (debt.getTabTag().equals(Debt.I_OWE_TAG) ? "your" : "his") + " debt";
         } else {
             message = "Tell " + debt.getOwner() + " about changed details";
         }
-        builder.setMessage(message);
-        builder.setPositiveButton("Notification", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                sendPushToOwner();
-                saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
-            }
-        });
-        builder.setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone().substring(1)));
-                startActivity(dial);
-                saveDebt(FLAG_SET_ALARM);
-            }
-        });
-        builder.setNegativeButton("Skip", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
-                saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
-            }
-        });
-        builder.show();
+        (new AlertDialog.Builder(EditDebtActivity.this)).setMessage(message)
+                .setPositiveButton("Notification", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        sendPushToOwner();
+                        saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
+                    }
+                })
+                .setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+                        startActivity(dial);
+                        saveDebt(FLAG_SET_ALARM);
+                    }
+                })
+                .setNegativeButton("Skip", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
+                    }
+                })
+                .show();
     }
 
-    private void prepareDebtForEditing() throws ParseException {
-        if (isFromPush) {
-            isNew = false;
-            cloneDebtFromPush();
-        } else if (debtId != null) {
-            isNew = false;
-            loadExistingDebt();
-        } else {
-            isNew = true;
-            debt = new Debt();
-            debt.setUuidString();
-            debt.setTabTag(debtTabTag);
-        }
-        beforeChange = debt.createClone();
-    }
-
-    private TextView.OnEditorActionListener onEditorActionListener = new EditText.OnEditorActionListener() {
-        @Override
-        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-            if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                TextView next = findNextEmptyView(v);
-                if (next != null) {
-                    requestViewFocus(next);
-                } else {
-                    clearViewFocus(v);
-                }
-                return true;
-            }
-            return false;
-        }
-    };
-
-    private void initViewHolders() {
-        debtTitleText = (EditText) findViewById(R.id.debt_title);
-        debtTitleText.setOnEditorActionListener(onEditorActionListener);
-        debtOwnerText = (EditText) findViewById(R.id.debt_owner);
-        debtOwnerText.setOnEditorActionListener(onEditorActionListener);
-        debtPhoneText = (EditText) findViewById(R.id.debt_phone);
-        debtPhoneText.setOnEditorActionListener(onEditorActionListener);
-        debtDescText = (EditText) findViewById(R.id.debt_desc);
-        saveButton = (Button) findViewById(R.id.save_button);
-        deleteButton = (Button) findViewById(R.id.delete_button);
-        remindButton = (Button) findViewById(R.id.remind_button);
-        remindCheckBox = (CheckBox) findViewById(R.id.remind_checkbox);
-    }
-
-    private void requestViewFocus(TextView v) {
-        v.requestFocus();
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT);
-    }
-
-    private void clearViewFocus(TextView v) {
-        v.clearFocus();
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-    }
-
-
-    private void fetchExtras() {
-        debtId = getIntent().getStringExtra(Debt.KEY_UUID);
-        debtTabTag = getIntent().getStringExtra(Debt.KEY_TAB_TAG);
-        isFromPush = getIntent().getBooleanExtra("fromPush", false);
-    }
-
+    /**
+     * Sends the owner a push notification about the debt.
+     */
     private void sendPushToOwner() {
         // TODO: 14/09/2015 send only if data was changed
         ParsePush push = new ParsePush();
@@ -415,49 +511,99 @@ public class EditDebtActivity extends AppCompatActivity {
         });
     }
 
-    private void loadExistingDebt() throws ParseException {
-        ParseQuery<Debt> query = Debt.getQuery();
-        query.fromLocalDatastore();
-        query.whereEqualTo(Debt.KEY_UUID, debtId);
-        Debt object = query.getFirst();
-        debt = object;
-        debtTitleText.setText(debt.getTitle());
-        debtOwnerText.setText(debt.getOwner());
-        debtPhoneText.setText(debt.getPhone());
-        debtDescText.setText(debt.getDescription());
-        Date dueDate = debt.getDueDate();
-        if (dueDate != null) {
-            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
-            remindCheckBox.setChecked(true);
+
+    //**********************************************************************************************
+    //**************************************** Auxiliary methods: **********************************
+    //**********************************************************************************************
+
+    /**
+     * Set the window's title according to the current tab tag.
+     */
+    private void setActionBarTitle() {//
+        ActionBar actionBar = getSupportActionBar();
+        if (debtTabTag.equals(Debt.I_OWE_TAG)) {
+            actionBar.setTitle(getString(R.string.i_owe_tab_title));
+        } else {
+            actionBar.setTitle(getString(R.string.owe_me_tab_title));
         }
-        deleteButton.setVisibility(View.VISIBLE);
     }
 
-    private void cloneDebtFromPush() throws ParseException {
-        debt = new Debt();
-        debt.setUuidString();
-
-        ParseQuery<Debt> query = Debt.getQuery();
-        query.whereEqualTo(Debt.KEY_UUID, debtId);
-
-        Debt other = query.getFirst();
-        debt.setOtherUuid(debtId);
-        debt.setTabTag(reverseTag(other.getTabTag()));
-        debtTitleText.setText(other.getTitle());
-        debtOwnerText.setText(other.getAuthorName());
-        debtPhoneText.setText(other.getAuthorPhone());
-        debtDescText.setText(other.getDescription());
-        Date dueDate = other.getDueDate();
-        if (dueDate != null) {
-            debt.setDueDate(dueDate);
-            remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
-            remindCheckBox.setChecked(true);
+    /**
+     * Next button listener that focuses on next empty <code>TextView</code>.
+     */
+    private TextView.OnEditorActionListener onEditorActionListener = new EditText.OnEditorActionListener() {
+        @Override
+        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                TextView next = findNextEmptyView(v);
+                if (next != null) {
+                    requestViewFocus(next);
+                } else {
+                    clearViewFocus(v);
+                }
+                return true;
+            }
+            return false;
         }
-        saveButton.setText(R.string.add_debt);
-        deleteButton.setText(R.string.ignore);
-        deleteButton.setVisibility(View.VISIBLE);
+    };
+
+    /**
+     * Retrieve the <code>View</code>s by their ids.
+     */
+    private void initViewHolders() {
+        debtTitleText = (EditText) findViewById(R.id.debt_title);
+        debtTitleText.setOnEditorActionListener(onEditorActionListener);
+        debtOwnerText = (EditText) findViewById(R.id.debt_owner);
+        debtOwnerText.setOnEditorActionListener(onEditorActionListener);
+        debtPhoneText = (EditText) findViewById(R.id.debt_phone);
+        debtPhoneText.setOnEditorActionListener(onEditorActionListener);
+        debtDescText = (EditText) findViewById(R.id.debt_desc);
+        saveButton = (Button) findViewById(R.id.save_button);
+        deleteButton = (Button) findViewById(R.id.delete_button);
+        remindButton = (Button) findViewById(R.id.remind_button);
+        remindCheckBox = (CheckBox) findViewById(R.id.remind_checkbox);
+        spinner1 = (Spinner) findViewById(R.id.spinner1);
+        spinner1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                currencyPos = position;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 
+    /**
+     * Request the focus on the given <code>TextView</code> the show the keyboard.
+     *
+     * @param v the out of focus <code>TextView</code>.
+     */
+    private void requestViewFocus(TextView v) {
+        v.requestFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT);
+    }
+
+    /**
+     * Clear the focus on the given <code>TextView</code> the hide the keyboard.
+     *
+     * @param v the <code>TextView</code> in focus.
+     */
+    private void clearViewFocus(TextView v) {
+        v.clearFocus();
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+    }
+
+    /**
+     * Switches to the opposite tag.
+     *
+     * @param tabTag the tag to reverse.
+     * @return the opposite tag.
+     */
     private String reverseTag(String tabTag) {
         if (tabTag.equals(Debt.I_OWE_TAG)) {
             tabTag = Debt.OWE_ME_TAG;
@@ -467,52 +613,39 @@ public class EditDebtActivity extends AppCompatActivity {
         return tabTag;
     }
 
-    private void returnToMain(Debt debt) {
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-//        intent.putExtra(Debt.KEY_TAB_TAG, debt.getUuidString());// REMOVE: 16/09/2015
-        intent.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
-        startActivity(intent);
-    }
-/*
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() ==  android.R.id.home) {
-            NavUtils.navigateUpFromSameTask(this);
+    /**
+     * Get ISO 3166-1 alpha-2 country code for this device (or <code>null</code> if not available).
+     *
+     * @param context <code>Context</code> reference to get the <code>TelephonyManager</code> instance from.
+     * @return country code or <code>null</code>.
+     */
+    private static String getUserCountry(Context context) {// TODO: 21/09/2015 test on tablet
+        try {
+            final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            final String simCountry = tm.getSimCountryIso();
+            if (simCountry != null && simCountry.length() == 2) { // SIM country code is available
+                return simCountry.toUpperCase(Locale.US);
+            } else if (tm.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) { // device is not 3G (would be unreliable)
+                String networkCountry = tm.getNetworkCountryIso();
+                if (networkCountry != null && networkCountry.length() == 2) { // network country code is available
+                    return networkCountry.toUpperCase(Locale.US);
+                }
+            } else {
+//                Locale.Builder builder = new Locale.Builder();// TODO: 22/09/2015 for tablet / no network no sim
+//                builder.setRegion(Locale.getDefault().getCountry());
+//                Locale locale=builder.build();
+            }
+        } catch (Exception e) {
         }
-        return super.onOptionsItemSelected(item);
-    }*/// REMOVE: 08/09/2015
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.edit_debt, menu);
-        setupSearch(menu);
-        return super.onCreateOptionsMenu(menu);
+        return null;
     }
 
-    private void setupSearch(Menu menu) {
-        SearchManager searchManager =
-                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        searchView =
-                (SearchView) menu.findItem(R.id.search).getActionView();
-        setSearchTextColors();
-        searchView.setSearchableInfo(
-                searchManager.getSearchableInfo(getComponentName()));
-        setSearchIcons();
-    }
-
-    private void setSearchTextColors() {
-        LinearLayout linearLayout1 = (LinearLayout) searchView.getChildAt(0);
-        LinearLayout linearLayout2 = (LinearLayout) linearLayout1.getChildAt(2);
-        LinearLayout linearLayout3 = (LinearLayout) linearLayout2.getChildAt(1);
-        AutoCompleteTextView autoComplete = (AutoCompleteTextView) linearLayout3.getChildAt(0);
-        //Set the input text color
-        autoComplete.setTextColor(Color.WHITE);
-        // set the hint text color
-        autoComplete.setHintTextColor(Color.WHITE);
-        autoComplete.setNextFocusDownId(R.id.debt_title);
-        autoComplete.setOnEditorActionListener(onEditorActionListener);
-    }
-
+    /**
+     * Returns the next empty <code>TextView</code>.
+     *
+     * @param view the <code>TextView</code> to start the search from (not including).
+     * @return next empty field, or <code>null</code> if all fields are filled.
+     */
     private TextView findNextEmptyView(TextView view) {
         int nextId = view.getNextFocusDownId();
         while (nextId != View.NO_ID) {
@@ -526,6 +659,45 @@ public class EditDebtActivity extends AppCompatActivity {
     }
 
 
+    //**********************************************************************************************
+    //**************************************** Contacts search methods: ****************************
+    //**********************************************************************************************
+
+    /**
+     * Prepares the <code>SearchView</code>.
+     *
+     * @param menu the <code>Menu</code> from the parameter given to {@link #onCreateOptionsMenu}
+     */
+    private void setupSearch(Menu menu) {
+        SearchManager searchManager =
+                (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchView =
+                (SearchView) menu.findItem(R.id.search).getActionView();
+        setSearchTextColors();
+        searchView.setSearchableInfo(
+                searchManager.getSearchableInfo(getComponentName()));
+        setSearchIcons();
+    }
+
+    /**
+     * Changes the hint and text colors of the <code>SearchView</code>.
+     */
+    private void setSearchTextColors() {
+        LinearLayout linearLayout1 = (LinearLayout) searchView.getChildAt(0);
+        LinearLayout linearLayout2 = (LinearLayout) linearLayout1.getChildAt(2);
+        LinearLayout linearLayout3 = (LinearLayout) linearLayout2.getChildAt(1);
+        AutoCompleteTextView autoComplete = (AutoCompleteTextView) linearLayout3.getChildAt(0);
+        //Set the input text color
+        autoComplete.setTextColor(Color.WHITE);
+        // set the hint text color
+        autoComplete.setHintTextColor(Color.WHITE);
+        autoComplete.setNextFocusDownId(R.id.debt_title);
+        autoComplete.setOnEditorActionListener(onEditorActionListener);
+    }
+
+    /**
+     * Changes the icons of the <code>SearchView</code>, using Java's reflection.
+     */
     private void setSearchIcons() {
         try {
             Field searchField = SearchView.class.getDeclaredField("mCloseButton");
@@ -579,9 +751,9 @@ public class EditDebtActivity extends AppCompatActivity {
 
     @Override
     protected void onNewIntent(Intent intent) {
-        int x = 3;
+        // Handle the search intent
         if (ContactsContract.Intents.SEARCH_SUGGESTION_CLICKED.equals(intent.getAction())) {
-            //handles suggestion clicked query
+            // Suggestion clicked mQuery
             String displayName = getDisplayNameForContact(intent);
             debtOwnerText.setText(displayName);
             String phone = getPhoneNumber(displayName);
@@ -591,9 +763,7 @@ public class EditDebtActivity extends AppCompatActivity {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) { // REMOVE: 14/09/2015
-            // handles a search query
-            String query = intent.getStringExtra(SearchManager.QUERY);
-//            debtOwnerText.setText("should search for query: '" + query + "'...");
+            // Other mQuery
             debtTitleText.requestFocus();
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
@@ -601,28 +771,11 @@ public class EditDebtActivity extends AppCompatActivity {
     }
 
     /**
-     * Get ISO 3166-1 alpha-2 country code for this device (or null if not available)
+     * Get contact's display name by the search mQuery.
      *
-     * @param context Context reference to get the TelephonyManager instance from
-     * @return country code or null
+     * @param intent the <code>Intent</code> the started the search.
+     * @return contact's display name.
      */
-    private static String getUserCountry(Context context) {
-        try {
-            final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            final String simCountry = tm.getSimCountryIso();
-            if (simCountry != null && simCountry.length() == 2) { // SIM country code is available
-                return simCountry.toUpperCase(Locale.US);
-            } else if (tm.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) { // device is not 3G (would be unreliable)
-                String networkCountry = tm.getNetworkCountryIso();
-                if (networkCountry != null && networkCountry.length() == 2) { // network country code is available
-                    return networkCountry.toUpperCase(Locale.US);
-                }
-            }
-        } catch (Exception e) {
-        }
-        return null;
-    }
-
     private String getDisplayNameForContact(Intent intent) {
         Cursor phoneCursor = getContentResolver().query(intent.getData(), null, null, null, null);
         phoneCursor.moveToFirst();
@@ -632,6 +785,12 @@ public class EditDebtActivity extends AppCompatActivity {
         return name;
     }
 
+    /**
+     * Extract the phone number by display name.
+     *
+     * @param name contacts display name.
+     * @return the phone number of the contact.
+     */
     private String getPhoneNumber(String name) {
         String ret = null;
         String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " like'" + name + "'";
@@ -648,10 +807,15 @@ public class EditDebtActivity extends AppCompatActivity {
         return ret;
     }
 
+
+    //**********************************************************************************************
+    //**************************************** Alarm methods: **************************************
+    //**********************************************************************************************
+
     /**
      * Sets a new notification alarm.
      *
-     * @param debt with valid dueDate
+     * @param debt with valid dueDate.
      */
     private void setAlarm(Debt debt) {
         long timeInMillis = debt.getDueDate().getTime();
@@ -678,7 +842,7 @@ public class EditDebtActivity extends AppCompatActivity {
     /**
      * Cancels notification alarm if exists.
      *
-     * @param debt to cancel
+     * @param debt to cancel.
      */
     private void cancelAlarm(Debt debt) {
         Intent alertIntent = new Intent(this, DueDateAlarm.class);
