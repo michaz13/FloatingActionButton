@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
@@ -25,6 +26,7 @@ import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
@@ -44,6 +46,7 @@ import android.widget.Toast;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
+import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
@@ -67,15 +70,15 @@ public class EditDebtActivity extends AppCompatActivity {
     private static final int FLAG_FORCE_BACK_TO_MAIN = 0x00040000;
     private static final int FLAG_SET_ALARM = 0X00020000;
 
-    private Button saveButton;
-    private Button deleteButton;
     private Button remindButton;
     private CheckBox remindCheckBox;
     private EditText debtTitleText;
     private EditText debtOwnerText;
     private EditText debtPhoneText;
     private EditText debtDescText;
+    private MenuItem searchViewMenuItem;
     private SearchView searchView;
+    private ImageView closeBtn;
     private Spinner spinner1;
 
     private Debt debt;
@@ -85,7 +88,9 @@ public class EditDebtActivity extends AppCompatActivity {
     private boolean isNew;
     private boolean isModified;
     private Debt beforeChange;
+
     private int currencyPos;
+    private MenuItem deleteMenuItem;
 
 
     //**********************************************************************************************
@@ -115,44 +120,6 @@ public class EditDebtActivity extends AppCompatActivity {
             debtTitleText.requestFocus();
         }
 
-        saveButton.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                if (!validateDebtDetails()) {
-                    return;
-                }
-                setDebtFieldsAfterEditing();
-                if (debt.getPhone() != null && (isNew || isModified)) {
-                    showPushDialog();
-                } else {
-                    saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
-                }
-            }
-        });
-
-        deleteButton.setOnClickListener(new OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
-                cancelAlarm(debt);
-                // The debt will be deleted eventually but will immediately be excluded from mQuery results.
-                debt.deleteEventually();// FIXME: 17/09/2015
-/*                debt.deleteInBackground(new DeleteCallback() {
-                    @Override
-                    public void done(ParseException e) {
-                        if (e != null) {
-                            System.err.println("Not deleted: " + e.getMessage());
-                        }
-                    }
-                });*/// FIXME: 17/09/2015
-                setResult(Activity.RESULT_OK);
-                finish();
-            }
-
-        });
-
         remindButton.setOnClickListener(new OnClickListener() {
 
             @Override
@@ -175,11 +142,6 @@ public class EditDebtActivity extends AppCompatActivity {
                 };
                 Date initDate;
                 Date currDate = debt.getDueDate();
-                Currency currency = Currency.getInstance(Locale.getDefault());
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    String info = currency.getDisplayName() + ":" + currency.getSymbol() + ":" + currency.toString();
-                    debtTitleText.setText(info);
-                }
                 if (currDate != null) {
                     initDate = currDate;
                 } else {
@@ -199,7 +161,61 @@ public class EditDebtActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.edit_debt, menu);
         setupSearch(menu);
+        deleteMenuItem = menu.findItem(R.id.action_delete);
+        if (isNew) {
+            deleteMenuItem.setVisible(false);
+        } else {
+            deleteMenuItem.setVisible(true);
+        }
+        if (isFromPush) {
+            deleteMenuItem.setIcon(R.drawable.ic_cancel_white_24dp);
+        } else {
+//            deleteMenuItem.setIcon(R.drawable.ic_delete_white_24dp); // TODO: 23/09/2015 ?
+        }
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                setResult(RESULT_CANCELED);
+                finish();
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.putExtra(Debt.KEY_TAB_TAG, debtTabTag);
+                startActivity(intent);
+                break;
+            case R.id.action_delete:
+                sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
+                cancelAlarm(debt);
+                // The debt will be deleted eventually but will immediately be excluded from mQuery results.
+                debt.deleteEventually();// FIXME: 17/09/2015
+/*                debt.deleteInBackground(new DeleteCallback() {
+                    @Override
+                    public void done(ParseException e) {
+                        if (e != null) {
+                            System.err.println("Not deleted: " + e.getMessage());
+                        }
+                    }
+                });*/// FIXME: 17/09/2015
+                setResult(Activity.RESULT_OK);
+                finish();
+                break;
+            case R.id.action_done:
+                if (!validateDebtDetails()) {
+                    break;
+                }
+                setDebtFieldsAfterEditing();
+                if (debt.getPhone() != null && (isNew || isModified)) {
+                    showPushDialog();
+                } else {
+                    saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
+                }
+                break;
+            default:
+                break;
+        }
+        return false;
     }
 
     /**
@@ -307,15 +323,14 @@ public class EditDebtActivity extends AppCompatActivity {
      * @param currencyPos the position of the currency symbol in the <code>Spinner</code>.
      */
     private void setTitleFormattedAsMoneyAmount(int currencyPos) {
-        if(currencyPos==Debt.NON_MONEY_DEBT_CURRENCY){
+        if (currencyPos == Debt.NON_MONEY_DEBT_CURRENCY) {
             return;
         }
         String currency = spinner1.getItemAtPosition(currencyPos).toString();
         int amount = debt.getMoneyAmount();
-        if(amount >=0 ) {
+        if (amount >= 0) {
             debt.setTitle(amount + " " + currency);
-        }
-        else{
+        } else {
             debt.setCurrencyPos(Debt.NON_MONEY_DEBT_CURRENCY);
         }
     }
@@ -364,7 +379,6 @@ public class EditDebtActivity extends AppCompatActivity {
             remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
             remindCheckBox.setChecked(true);
         }
-        deleteButton.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -392,9 +406,9 @@ public class EditDebtActivity extends AppCompatActivity {
             remindButton.setText(android.text.format.DateFormat.format("MM/dd/yy h:mmaa", dueDate.getTime()));
             remindCheckBox.setChecked(true);
         }
-        saveButton.setText(R.string.add_debt);
-        deleteButton.setText(R.string.ignore);
-        deleteButton.setVisibility(View.VISIBLE);
+        // REMOVE: 23/09/2015
+        ParseUser author = other.getAuthor();
+        System.out.println("Other id *******************************************************************" + author.getObjectId());
     }
 
     /**
@@ -522,9 +536,13 @@ public class EditDebtActivity extends AppCompatActivity {
     private void setActionBarTitle() {//
         ActionBar actionBar = getSupportActionBar();
         if (debtTabTag.equals(Debt.I_OWE_TAG)) {
-            actionBar.setTitle(getString(R.string.i_owe_tab_title));
+            if (actionBar != null) {
+                actionBar.setTitle(getString(R.string.i_owe_tab_title));
+            }
         } else {
-            actionBar.setTitle(getString(R.string.owe_me_tab_title));
+            if (actionBar != null) {
+                actionBar.setTitle(getString(R.string.owe_me_tab_title));
+            }
         }
     }
 
@@ -558,8 +576,6 @@ public class EditDebtActivity extends AppCompatActivity {
         debtPhoneText = (EditText) findViewById(R.id.debt_phone);
         debtPhoneText.setOnEditorActionListener(onEditorActionListener);
         debtDescText = (EditText) findViewById(R.id.debt_desc);
-        saveButton = (Button) findViewById(R.id.save_button);
-        deleteButton = (Button) findViewById(R.id.delete_button);
         remindButton = (Button) findViewById(R.id.remind_button);
         remindCheckBox = (CheckBox) findViewById(R.id.remind_checkbox);
         spinner1 = (Spinner) findViewById(R.id.spinner1);
@@ -671,8 +687,8 @@ public class EditDebtActivity extends AppCompatActivity {
     private void setupSearch(Menu menu) {
         SearchManager searchManager =
                 (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        searchView =
-                (SearchView) menu.findItem(R.id.search).getActionView();
+        searchViewMenuItem = menu.findItem(R.id.search);
+        searchView = (SearchView) searchViewMenuItem.getActionView();
         setSearchTextColors();
         searchView.setSearchableInfo(
                 searchManager.getSearchableInfo(getComponentName()));
@@ -692,7 +708,23 @@ public class EditDebtActivity extends AppCompatActivity {
         // set the hint text color
         autoComplete.setHintTextColor(Color.WHITE);
         autoComplete.setNextFocusDownId(R.id.debt_title);
-        autoComplete.setOnEditorActionListener(onEditorActionListener);
+        autoComplete.setOnEditorActionListener(new EditText.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                    closeBtn.performClick();
+                    closeBtn.performClick();
+                    TextView next = findNextEmptyView(v);
+                    if (next != null) {
+                        requestViewFocus(next);
+                    } else {
+                        clearViewFocus(v);
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
     }
 
     /**
@@ -702,7 +734,7 @@ public class EditDebtActivity extends AppCompatActivity {
         try {
             Field searchField = SearchView.class.getDeclaredField("mCloseButton");
             searchField.setAccessible(true);
-            ImageView closeBtn = (ImageView) searchField.get(searchView);
+            closeBtn = (ImageView) searchField.get(searchView);
             closeBtn.setImageResource(R.drawable.ic_close_white_24dp);
 
             searchField = SearchView.class.getDeclaredField("mVoiceButton");
@@ -729,7 +761,9 @@ public class EditDebtActivity extends AppCompatActivity {
             Method textSizeMethod = clazz.getMethod("getTextSize");
             Float rawTextSize = (Float) textSizeMethod.invoke(autoComplete);
             int textSize = (int) (rawTextSize * 1.25);
-            searchIcon.setBounds(0, 0, textSize, textSize);
+            if (searchIcon != null) {
+                searchIcon.setBounds(0, 0, textSize, textSize);
+            }
             stopHint.setSpan(new ImageSpan(searchIcon), 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
             // Set the new hint text
@@ -758,15 +792,19 @@ public class EditDebtActivity extends AppCompatActivity {
             debtOwnerText.setText(displayName);
             String phone = getPhoneNumber(displayName);
             debtPhoneText.setText(phone);
+            closeBtn.performClick();
+            closeBtn.performClick();
             debtTitleText.requestFocus();
-            debtTitleText.setNextFocusDownId(R.id.debt_desc);
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) { // REMOVE: 14/09/2015
             // Other mQuery
+            closeBtn.performClick();
+            closeBtn.performClick();
             debtTitleText.requestFocus();
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
+            searchView.onActionViewCollapsed();
         }
     }
 

@@ -3,6 +3,14 @@
     xmlns:yourapp="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_edit_mode"
+        android:icon="@drawable/ic_mode_edit_white_24dp"
+        yourapp:showAsAction="always"
+        android:visible="false"
+        android:title="@string/action_edit_mode">
+    </item>
+
+    <item
         android:id="@+id/action_chart_mode"
         android:icon="@drawable/ic_insert_chart_white_24dp"
         yourapp:showAsAction="ifRoom"

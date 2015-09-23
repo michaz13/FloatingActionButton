@@ -107,7 +107,11 @@
     <string name="ignore">Ignore</string>
     <string name="add_debt">Add to my debts</string>
     <string name="action_new">New Debt</string>
+    <string name="action_delete">Delete Debt</string>
+    <string name="action_done">Save Debt</string>
+    <string name="action_cancel">Revert Changes</string>
     <string name="action_sync">Sync</string>
+    <string name="action_edit_mode">Edit Debt</string>
     <string name="action_chart_mode">Chart Mode</string>
     <string name="action_list_mode">List Mode</string>
     <string name="action_logout">Log Out</string>

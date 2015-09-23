@@ -2,9 +2,14 @@ package com.melnykov.fab.sample;
 
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -19,10 +24,13 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParseQuery;
+import com.parse.ParseUser;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,14 +52,19 @@ public class ChartFragment extends android.support.v4.app.Fragment {
     private TextView tvXMax;
     private TextView tvXMin;
 
+    MenuItem editModeMenuItem;
+    Debt selectedDebt;
+
     private List<Debt> mData;
 
-    public ChartFragment() {
-
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         if (mRoot != null) {
             return mRoot;
         }
@@ -61,17 +74,54 @@ public class ChartFragment extends android.support.v4.app.Fragment {
         mChart = (PieChart) v.findViewById(R.id.pieChart1);
         mChart.setDescription("");
 
+        mChart.setOnChartGestureListener(new OnChartGestureListener() {
+            @Override
+            public void onChartLongPressed(MotionEvent me) {
+
+            }
+
+            @Override
+            public void onChartDoubleTapped(MotionEvent me) {
+
+            }
+
+            @Override
+            public void onChartSingleTapped(MotionEvent me) {
+                editModeMenuItem.setVisible(false);
+            }
+
+            @Override
+            public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {
+
+            }
+
+            @Override
+            public void onChartScale(MotionEvent me, float scaleX, float scaleY) {
+
+            }
+
+            @Override
+            public void onChartTranslate(MotionEvent me, float dX, float dY) {
+
+            }
+        });
         mChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry e, int dataSetIndex, Highlight h) {
-                // TODO: 22/09/2015 show all debts of this owner
+                if (e == null) {
+                    return;
+                }
+                selectedDebt = mData.get(e.getXIndex());
+                editModeMenuItem.setVisible(true);
             }
 
             @Override
             public void onNothingSelected() {
-
+                editModeMenuItem.setVisible(false);
             }
         });
+
+
         tvXMax = (TextView) v.findViewById(R.id.tvXMax);
         tvXMin = (TextView) v.findViewById(R.id.tvXMin);
 
@@ -132,6 +182,7 @@ public class ChartFragment extends android.support.v4.app.Fragment {
         return v;
     }
 
+
     @Override
     public void onResume() {
         super.onResume();
@@ -162,13 +213,37 @@ public class ChartFragment extends android.support.v4.app.Fragment {
         setData(mSeekBarXMin.getProgress(), mSeekBarXMax.getProgress() + 1);
     }
 
+//    @Override // TODO: 23/09/2015 separate menu
+//    public void onCreateOptionsMenu(Menu menu,MenuInflater inflater) {
+//        getActivity().getMenuInflater().inflate(R.menu.main, menu);
+//        super.onCreateOptionsMenu(menu, inflater);
+//    }
+
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        editModeMenuItem = menu.findItem(R.id.action_edit_mode);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_edit_mode:
+                openEditView(selectedDebt);
+                break;
+            default:
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private void setData(int fromIndex, int toIndex) {
         int totalValue = 0;
 
         if (fromIndex > toIndex) {
             toIndex = fromIndex + 1;
         }
-        if (mData == null || mData.size()<=0) {
+        if (mData == null || mData.size() <= 0) {
             toIndex = 0;
         }
         ArrayList<Entry> yVals = new ArrayList<>();
@@ -186,7 +261,7 @@ public class ChartFragment extends android.support.v4.app.Fragment {
             xVals.add(mData.get(i).getOwner());
         }
 
-        PieDataSet dataSet = new PieDataSet(yVals, getTag()+" debts");// TODO: 22/09/2015 by tag
+        PieDataSet dataSet = new PieDataSet(yVals, getTag() + " debts");// TODO: 22/09/2015 by tag
         dataSet.setSliceSpace(3f);
         dataSet.setSelectionShift(5f);
 
@@ -225,5 +300,13 @@ public class ChartFragment extends android.support.v4.app.Fragment {
 
         // refresh data
         mChart.invalidate();
+    }
+
+    // Helper methods: -----------------------------------------------------------------------------
+    private void openEditView(Debt debt) {
+        Intent i = new Intent(getActivity().getApplicationContext(), EditDebtActivity.class);
+        i.putExtra(Debt.KEY_UUID, debt.getUuidString());
+        i.putExtra(Debt.KEY_TAB_TAG, debt.getTabTag());
+        startActivityForResult(i, MainActivity.EDIT_ACTIVITY_CODE);
     }
 }

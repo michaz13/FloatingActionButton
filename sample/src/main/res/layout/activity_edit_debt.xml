@@ -80,13 +80,7 @@
                 android:layout_weight="5"
                 android:text="@string/remind_button_text" />
         </LinearLayout>
-
-        <Button
-            android:id="@+id/save_button"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/save" />
-
+        
         <Button
             android:id="@+id/delete_button"
             android:layout_width="fill_parent"

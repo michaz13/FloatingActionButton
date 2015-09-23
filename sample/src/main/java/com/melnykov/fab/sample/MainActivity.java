@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     ChartFragment oweMeChartFragment;
     ChartFragment iOweChartFragment;
 
+    MenuItem syncMenuItem;
     MenuItem loginMenuItem;
     MenuItem logoutMenuItem;
     MenuItem chartModeMenuItem;
@@ -133,11 +134,6 @@ public class MainActivity extends AppCompatActivity {
                     .setTabListener(new ActionBar.TabListener() {
                         @Override
                         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-//                            if (iOweViewFragment == null || iOweViewFragmentWithTag == null) {
-//                                iOweViewFragment = new ListViewFragment();
-//                                fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
-//                                iOweViewFragmentWithTag = (ListViewFragment) getSupportFragmentManager().findFragmentByTag(Debt.I_OWE_TAG);
-//                            } else {
                             if (isChartMode) {
                                 if (iOweChartFragment == null) {
                                     iOweChartFragment = new ChartFragment();
@@ -149,7 +145,6 @@ public class MainActivity extends AppCompatActivity {
                                 }
                                 fragmentTransaction.replace(android.R.id.content, iOweViewFragment, Debt.I_OWE_TAG);
                             }
-//                            }
                         }
 
                         @Override
@@ -170,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 //                                oweMeViewFragment = new ListViewFragmentOweMe();
 //                                fragmentTransaction.replace(android.R.id.content, oweMeViewFragment, Debt.OWE_ME_TAG);
 //                                oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
-//                            } else {
+//                            } else {// REMOVE: 23/09/2015
                             if (isChartMode) {
                                 if (oweMeChartFragment == null) {
                                     oweMeChartFragment = new ChartFragment();
@@ -226,6 +221,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onPrepareOptionsMenu(Menu menu) {
         super.onPrepareOptionsMenu(menu);
         boolean isRealUser = !ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser());
+        syncMenuItem = menu.findItem(R.id.action_sync);
         loginMenuItem = menu.findItem(R.id.action_login);
         logoutMenuItem = menu.findItem(R.id.action_logout);
         chartModeMenuItem = menu.findItem(R.id.action_chart_mode);
@@ -457,6 +453,7 @@ public class MainActivity extends AppCompatActivity {
                 query.findInBackground(new FindCallback<Debt>() {
                     public void done(List<Debt> debts, ParseException e) {
                         if (e == null) {
+                            syncMenuItem.setVisible(false);
                             for (final Debt debt : debts) {
                                 // Set is draft flag to false before
                                 // syncing to Parse
@@ -476,6 +473,7 @@ public class MainActivity extends AppCompatActivity {
 //                                                }
                                             }
                                         } else {
+                                            syncMenuItem.setVisible(true);
                                             if (!isShowLoginOnFail) {
 /*                                                Toast.makeText(getApplicationContext(),
                                                         e.getMessage(),
