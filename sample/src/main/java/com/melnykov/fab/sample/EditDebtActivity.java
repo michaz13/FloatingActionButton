@@ -12,10 +12,8 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.telephony.TelephonyManager;
@@ -46,6 +44,7 @@ import android.widget.Toast;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
+import com.parse.FindCallback;
 import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParsePush;
@@ -57,8 +56,9 @@ import com.parse.SendCallback;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Currency;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -72,6 +72,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
     private Button remindButton;
     private CheckBox remindCheckBox;
+    private CheckBox pushCheckBox;
     private EditText debtTitleText;
     private EditText debtOwnerText;
     private EditText debtPhoneText;
@@ -169,8 +170,6 @@ public class EditDebtActivity extends AppCompatActivity {
         }
         if (isFromPush) {
             deleteMenuItem.setIcon(R.drawable.ic_cancel_white_24dp);
-        } else {
-//            deleteMenuItem.setIcon(R.drawable.ic_delete_white_24dp); // TODO: 23/09/2015 ?
         }
         return super.onCreateOptionsMenu(menu);
     }
@@ -185,7 +184,7 @@ public class EditDebtActivity extends AppCompatActivity {
                 intent.putExtra(Debt.KEY_TAB_TAG, debtTabTag);
                 startActivity(intent);
                 break;
-            case R.id.action_delete:
+            case R.id.action_delete:// TODO: 24/09/2015 confirm dialog
                 sendPushResponse(debt.getOtherUuid(), Debt.STATUS_RETURNED);// TODO: 16/09/2015 move to "done" marking
                 cancelAlarm(debt);
                 // The debt will be deleted eventually but will immediately be excluded from mQuery results.
@@ -207,7 +206,10 @@ public class EditDebtActivity extends AppCompatActivity {
                 }
                 setDebtFieldsAfterEditing();
                 if (debt.getPhone() != null && (isNew || isModified)) {
-                    showPushDialog();
+                    if (pushCheckBox.isChecked()) {// TODO: 24/09/2015 settings
+                        sendPushToOwner();
+                    }
+                    showActionsDialog();
                 } else {
                     saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
                 }
@@ -343,16 +345,12 @@ public class EditDebtActivity extends AppCompatActivity {
     private boolean validateDebtDetails() {
         if (debtTitleText.getText().toString().trim().equals("")) {
             debtTitleText.setError(getString(R.string.no_title_error));
-            debtTitleText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
+            requestViewFocus(debtTitleText);
             return false;
         }
         if (debtOwnerText.getText().toString().trim().equals("")) {
             debtOwnerText.setError(getString(R.string.no_owner_error));
-            debtOwnerText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(debtOwnerText, InputMethodManager.SHOW_IMPLICIT);
+            requestViewFocus(debtTitleText);
             return false;
         }
         return true;
@@ -434,7 +432,7 @@ public class EditDebtActivity extends AppCompatActivity {
 
 
     //**********************************************************************************************
-    //**************************************** Push methods: ***************************************
+    //**************************************** Communication methods: ******************************
     //**********************************************************************************************
 
     /**
@@ -470,18 +468,19 @@ public class EditDebtActivity extends AppCompatActivity {
     /**
      * Show a confirmation push notification dialog, with an option to call the owner.
      */
-    private void showPushDialog() {
+    private void showActionsDialog() {
         String message;
         if (isNew) {
-            message = "Tell " + debt.getOwner() + " about " + (debt.getTabTag().equals(Debt.I_OWE_TAG) ? "your" : "his") + " debt";
+            message = "Talk with " + debt.getOwner() + " about " + (debt.getTabTag().equals(Debt.I_OWE_TAG) ? "your" : "his") + " debt";
         } else {
-            message = "Tell " + debt.getOwner() + " about changed details";
+            message = "Talk with " + debt.getOwner() + " about changed details";
         }
         (new AlertDialog.Builder(EditDebtActivity.this)).setMessage(message)
-                .setPositiveButton("Notification", new DialogInterface.OnClickListener() {
+
+                .setPositiveButton("Instant messages", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
-                        sendPushToOwner();
-                        saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
+                        openConversationByPhone();
+                        saveDebt(FLAG_SET_ALARM);
                     }
                 })
                 .setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
@@ -496,7 +495,30 @@ public class EditDebtActivity extends AppCompatActivity {
                         saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
                     }
                 })
+//                .setItems(R.array.colors_array, new DialogInterface.OnClickListener() {// TODO: 24/09/2015
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        // The 'which' argument contains the index position
+//                        // of the selected item
+//                    }
                 .show();
+    }
+
+    public void openConversationByPhone() {
+        ParseQuery<ParseUser> query = ParseUser.getQuery();
+        query.whereEqualTo("phone", debt.getAuthorPhone());
+        query.findInBackground(new FindCallback<ParseUser>() {
+            public void done(List<ParseUser> user, com.parse.ParseException e) {
+                if (e == null) {
+                    Intent intent = new Intent(getApplicationContext(), MessagingActivity.class);
+                    intent.putExtra("RECIPIENT_ID", user.get(0).getObjectId());
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getApplicationContext(),
+                            "Error finding that user",
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     /**
@@ -535,7 +557,10 @@ public class EditDebtActivity extends AppCompatActivity {
      */
     private void setActionBarTitle() {//
         ActionBar actionBar = getSupportActionBar();
-        if (debtTabTag.equals(Debt.I_OWE_TAG)) {
+        if (actionBar != null) {
+            actionBar.setDisplayShowTitleEnabled(false);
+        }
+/*        if (debtTabTag.equals(Debt.I_OWE_TAG)) {
             if (actionBar != null) {
                 actionBar.setTitle(getString(R.string.i_owe_tab_title));
             }
@@ -543,7 +568,7 @@ public class EditDebtActivity extends AppCompatActivity {
             if (actionBar != null) {
                 actionBar.setTitle(getString(R.string.owe_me_tab_title));
             }
-        }
+        }*/// REMOVE: 24/09/2015
     }
 
     /**
@@ -553,17 +578,21 @@ public class EditDebtActivity extends AppCompatActivity {
         @Override
         public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                TextView next = findNextEmptyView(v);
-                if (next != null) {
-                    requestViewFocus(next);
-                } else {
-                    clearViewFocus(v);
-                }
+                focusOnNextEmptyOrDone(v);
                 return true;
             }
             return false;
         }
     };
+
+    private void focusOnNextEmptyOrDone(TextView v) {
+        TextView next = findNextEmptyView(v);
+        if (next != null) {
+            requestViewFocus(next);
+        } else {
+            clearViewFocus(v);
+        }
+    }
 
     /**
      * Retrieve the <code>View</code>s by their ids.
@@ -578,6 +607,7 @@ public class EditDebtActivity extends AppCompatActivity {
         debtDescText = (EditText) findViewById(R.id.debt_desc);
         remindButton = (Button) findViewById(R.id.remind_button);
         remindCheckBox = (CheckBox) findViewById(R.id.remind_checkbox);
+        pushCheckBox = (CheckBox) findViewById(R.id.push_checkbox);
         spinner1 = (Spinner) findViewById(R.id.spinner1);
         spinner1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -712,14 +742,8 @@ public class EditDebtActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    closeBtn.performClick();
-                    closeBtn.performClick();
-                    TextView next = findNextEmptyView(v);
-                    if (next != null) {
-                        requestViewFocus(next);
-                    } else {
-                        clearViewFocus(v);
-                    }
+                    closeSearchView();
+                    focusOnNextEmptyOrDone(v);
                     return true;
                 }
                 return false;
@@ -792,20 +816,18 @@ public class EditDebtActivity extends AppCompatActivity {
             debtOwnerText.setText(displayName);
             String phone = getPhoneNumber(displayName);
             debtPhoneText.setText(phone);
-            closeBtn.performClick();
-            closeBtn.performClick();
-            debtTitleText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
+            closeSearchView();
+            focusOnNextEmptyOrDone(debtTitleText);
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) { // REMOVE: 14/09/2015
-            // Other mQuery
-            closeBtn.performClick();
-            closeBtn.performClick();
-            debtTitleText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(debtTitleText, InputMethodManager.SHOW_IMPLICIT);
-            searchView.onActionViewCollapsed();
+            // Other query
+            closeSearchView();
+            focusOnNextEmptyOrDone(debtTitleText);
         }
+    }
+
+    private void closeSearchView() {
+        closeBtn.performClick();
+        closeBtn.performClick();
     }
 
     /**
@@ -894,4 +916,5 @@ public class EditDebtActivity extends AppCompatActivity {
 
         Toast.makeText(this, "REMOVED Reminder " + alarmId, Toast.LENGTH_LONG).show(); // REMOVE: 07/09/2015
     }
+
 }

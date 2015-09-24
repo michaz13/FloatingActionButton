@@ -56,8 +56,8 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
 //            String info = "\nauthor: "+author.getUsername()+"\nisAuth: "+isAuth+"\nisDataAvai: "+isDataAvai+"\nisNew: "+isNew+"\nisDirty: "+isDirty+"\ntoken: "+token+"\nisLinked: "+isLinked;
 */
 
-String extra = "\n"+debt.getUuidString()+"<-"+debt.getOtherUuid();
-        debtTitle.setText(debt.getTitle()+extra);
+//String extra = "\n"+debt.getUuidString()+"<-"+debt.getOtherUuid(); // REMOVE: 24/09/2015
+        debtTitle.setText(debt.getTitle());
         if (debt.isDraft()) {
             debtTitle.setTypeface(null, Typeface.ITALIC);
             debtTitle.setTextColor(Color.RED);// TODO: 02/09/2015 GRAY

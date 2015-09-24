@@ -5,12 +5,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <ListView
-        android:id="@android:id/list"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:cacheColorHint="@android:color/transparent"
-        android:headerDividersEnabled="false" />
+    <!--remove<ListView-->
+        <!--android:id="@android:id/list"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:cacheColorHint="@android:color/transparent"-->
+        <!--android:headerDividersEnabled="false" />-->
+
+    <com.fortysevendeg.swipelistview.SwipeListView
+        xmlns:swipe="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/debts_list"
+        android:listSelector="#00000000"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        swipe:swipeFrontView="@+id/front"
+        swipe:swipeBackView="@+id/back"
+        swipe:swipeDrawableChecked="@drawable/choice_selected"
+        swipe:swipeDrawableUnchecked="@drawable/choice_unselected"
+        swipe:swipeCloseAllItemsWhenMoveList="true"
+        swipe:swipeMode="both"/>
 
     <LinearLayout
         android:id="@+id/no_debts_view"
@@ -25,7 +38,6 @@
             android:fontFamily="sans-serif"
             android:gravity="center"
             android:text="@string/no_items"
-            android:textAlignment="center"
             android:textSize="20sp" />
     </LinearLayout>
 
@@ -33,7 +45,7 @@
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|right"
+        android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:src="@drawable/ic_add_white_24dp"
         fab:fab_colorNormal="@color/accent"

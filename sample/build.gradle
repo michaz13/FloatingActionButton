@@ -21,6 +21,7 @@ android {
 
 repositories {
     maven { url "https://jitpack.io" }
+    maven { url 'http://clinker.47deg.com/nexus/content/groups/public' }
 //    mavenCentral() todo
 //    maven { todo
 //        url 'http://oss.sonatype.org/content/repositories/snapshots'
@@ -40,5 +41,9 @@ dependencies {
     compile files('libs/svg-android-1.1.jar')
     compile files('libs/libphonenumber-7.0.9.jar')
     compile 'com.github.PhilJay:MPAndroidChart:v2.1.4'
-//    compile 'com.github.blackcat27:library:1.0.0-SNAPSHOT' todo
+    //    compile 'com.github.blackcat27:library:1.0.0-SNAPSHOT' todo
+    compile files('libs/sinch-android-rtc-3.6.2.jar')
+    compile ('com.fortysevendeg.swipelistview:swipelistview:1.0-SNAPSHOT@aar') {
+        transitive = true
+    }
 }

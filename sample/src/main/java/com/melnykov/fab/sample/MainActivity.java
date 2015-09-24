@@ -68,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isChartMode;
 
+    private Intent serviceIntent;
+    private boolean isAllDebtSynced = true;
+
 
 //    ListViewFragment iOweViewFragmentWithTag;
 //    ListViewFragmentOweMe oweMeViewFragmentWithTag;
@@ -76,6 +79,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        serviceIntent = new Intent(getApplicationContext(), MessageService.class);
+
+        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+            startService(serviceIntent);
+        }
+
         initActionBar();
 /*        System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ on create");
         Intent intent = getIntent();
@@ -111,6 +121,12 @@ public class MainActivity extends AppCompatActivity {
                 actionBar.selectTab(actionBar.getTabAt(OWE_ME_TAB_INDEX));
             }
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        stopService(new Intent(this, MessageService.class));
+        super.onDestroy();
     }
 
 /*    @Override
@@ -153,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-                            onTabSelected(tab,fragmentTransaction);
+                            onTabSelected(tab, fragmentTransaction);
                         }
                     }));
             actionBar.addTab(actionBar.newTab()
@@ -186,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
 
                         @Override
                         public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-                            onTabSelected(tab,fragmentTransaction);
+                            onTabSelected(tab, fragmentTransaction);
                         }
                     }));
 //            actionBar.addTab(actionBar.newTab()
@@ -214,25 +230,35 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-        boolean isRealUser = !ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser());
         syncMenuItem = menu.findItem(R.id.action_sync);
         loginMenuItem = menu.findItem(R.id.action_login);
         logoutMenuItem = menu.findItem(R.id.action_logout);
         chartModeMenuItem = menu.findItem(R.id.action_chart_mode);
         listModeMenuItem = menu.findItem(R.id.action_list_mode);
 
+        updateMenuItemsVisibility();
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+
+        updateMenuItemsVisibility();
+
+        return true;
+    }
+
+    private void updateMenuItemsVisibility() {
+        boolean isRealUser = !ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser());
+        loginMenuItem.setVisible(!isRealUser);
+        logoutMenuItem.setVisible(isRealUser);
+
         chartModeMenuItem.setVisible(!isChartMode);
         listModeMenuItem.setVisible(isChartMode);
 
-        loginMenuItem.setVisible(!isRealUser);
-        logoutMenuItem.setVisible(isRealUser);
-        return true;
+        syncMenuItem.setVisible(!isAllDebtSynced);
     }
 
     @Override
@@ -382,7 +408,8 @@ public class MainActivity extends AppCompatActivity {
 //                    }
                 }
             } else if (requestCode == LOGIN_ACTIVITY_CODE) {
-                subscribeToPush();
+                startService(serviceIntent);
+                subscribeToPush();// TODO: 24/09/2015 settings
                 // If the user is new, sync data to Parse, otherwise get the current list from Parse
                 if (ParseUser.getCurrentUser().isNew()) {
                     syncDebtsToParse(SHOW_LOGIN_ON_ERROR);// FIXME: 06/09/2015 add if
@@ -417,6 +444,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void logoutFromParse() {
+        stopService(new Intent(this, MessageService.class));
         unsubscribeFromPush();
         // Log out the current user
         ParseUser.logOut();
@@ -453,7 +481,8 @@ public class MainActivity extends AppCompatActivity {
                 query.findInBackground(new FindCallback<Debt>() {
                     public void done(List<Debt> debts, ParseException e) {
                         if (e == null) {
-                            syncMenuItem.setVisible(false);
+
+                            isAllDebtSynced = true;
                             for (final Debt debt : debts) {
                                 // Set is draft flag to false before
                                 // syncing to Parse
@@ -473,7 +502,6 @@ public class MainActivity extends AppCompatActivity {
 //                                                }
                                             }
                                         } else {
-                                            syncMenuItem.setVisible(true);
                                             if (!isShowLoginOnFail) {
 /*                                                Toast.makeText(getApplicationContext(),
                                                         e.getMessage(),
@@ -481,6 +509,7 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                             // Reset the is draft flag locally to true
                                             debt.setDraft(true);
+                                            isAllDebtSynced = false;
                                             // Save flag field as late as possible - to deal with
                                             // asynchronous callback
                                             _isShowLoginOnFail = isShowLoginOnFail;
@@ -491,6 +520,7 @@ public class MainActivity extends AppCompatActivity {
                                 });
                             }
                         } else {
+                            isAllDebtSynced = true;
                             Log.i("DebtListActivity",
                                     "syncDebtsToParse: Error finding pinned debts: "
                                             + e.getMessage());

@@ -9,7 +9,8 @@
         android:layout_height="wrap_content"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="30dp">
 
 
         <EditText
@@ -26,9 +27,9 @@
             android:id="@+id/spinner1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:spinnerMode="dropdown"
             android:entries="@array/country_arrays"
-            android:prompt="@string/country_prompt" />
+            android:prompt="@string/country_prompt"
+            android:spinnerMode="dropdown" />
 
         <EditText
             android:id="@+id/debt_owner"
@@ -71,7 +72,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:checked="false"
-                android:text="@string/remindCheckBox_text" />
+                android:text="@string/remind_checkbox_text" />
 
             <Button
                 android:id="@+id/remind_button"
@@ -80,13 +81,13 @@
                 android:layout_weight="5"
                 android:text="@string/remind_button_text" />
         </LinearLayout>
-        
-        <Button
-            android:id="@+id/delete_button"
-            android:layout_width="fill_parent"
+
+        <CheckBox
+            android:id="@+id/push_checkbox"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/delete"
-            android:visibility="invisible" />
+            android:checked="true"
+            android:text="@string/push_checkbox_text" />
 
     </LinearLayout>
 </ScrollView>

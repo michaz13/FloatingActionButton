@@ -107,8 +107,9 @@
     <string name="ignore">Ignore</string>
     <string name="add_debt">Add to my debts</string>
     <string name="action_new">New Debt</string>
+    <string name="action_remind">Set Reminder</string>
     <string name="action_delete">Delete Debt</string>
-    <string name="action_done">Save Debt</string>
+    <string name="action_done">Done</string>
     <string name="action_cancel">Revert Changes</string>
     <string name="action_sync">Sync</string>
     <string name="action_edit_mode">Edit Debt</string>
@@ -128,10 +129,19 @@
     <string name="debt_owner_hint">Owner (or find above)</string>
     <string name="debt_phone_hint">Owner\'s phone</string>
     <string name="debt_desc_hint">Notes</string>
-    <string name="remindCheckBox_text">Reminder</string>
+    <string name="remind_checkbox_text">Reminder</string>
 
     <string name="findContact">Search in contacts</string>
     <string name="app_slogan">Manage your debts - easily!</string>
     <string name="remind_button_text">Set reminder</string>
+
+    <string name="message_elipses">Message…</string>
+    <string name="push_checkbox_text">Sync debt with owner using push notification</string>
+
+    <string name="dismiss">Dismiss</string>
+    <string name="discard">Discard</string>
+    <string name="open">Open</string>
+
+
 
 </resources>

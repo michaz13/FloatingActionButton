@@ -1,15 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<TextView
-    android:id="@+id/debt_title"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:drawablePadding="8dp"
-    android:gravity="center_vertical"
-    android:paddingBottom="8dp"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
-    android:paddingTop="8dp"
-    android:textColor="#212121"
-    android:textSize="18sp"/>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="fill_parent"
+android:layout_height="fill_parent"
+    >
+
+<LinearLayout
+    android:id="@+id/back"
+    android:tag="back"
+    style="@style/ListBackContent"
+    >
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/example_row_b_action_1"
+        style="@style/ListButtonAction"
+        android:text="@string/open"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/example_row_b_action_2"
+        style="@style/ListButtonAction"
+        android:text="Google Play"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/example_row_b_action_3"
+        style="@style/ListButtonAction"
+        android:text="Uninstall"/>
+
+</LinearLayout>
+
+<RelativeLayout
+    android:orientation="vertical"
+    android:id="@+id/front"
+    android:tag="front"
+    style="@style/ListFrontContent">
+
+    <ImageView
+        style="@style/ListImage"
+        android:id="@+id/example_row_iv_image"/>
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/example_row_iv_image"
+        style="@style/ListTitle"
+        android:id="@+id/debt_title"/>
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/example_row_iv_image"
+        android:layout_below="@id/debt_title"
+        style="@style/ListDescription"
+        android:id="@+id/example_row_tv_description"/>
+
+</RelativeLayout>
+
+</FrameLayout>
