@@ -38,6 +38,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     static final int LOGIN_ACTIVITY_CODE = 100;
+    static final int SETTINGS_ACTIVITY_CODE = 100;
     static final int EDIT_ACTIVITY_CODE = 200;
     static final int EDIT_ACTIVITY_FRAGMENT_CODE = 65736;
     static final String USER_CHANNEL_PREFIX = "t";
@@ -265,6 +266,11 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         ActionBar actionBar = getSupportActionBar();
         switch (item.getItemId()) {
+            case R.id.action_settings:
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivityForResult(intent, SETTINGS_ACTIVITY_CODE);
+                break;
+
             case R.id.action_sync:
                 syncDebtsToParse(SHOW_LOGIN_ON_ERROR);
                 break;
@@ -416,8 +422,8 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     loadFromParse();
                 }
+                updateLoggedInInfo();// TODO: 05/09/2015 remove?
             }
-            updateLoggedInInfo();// TODO: 05/09/2015 remove?
         }
 
     }

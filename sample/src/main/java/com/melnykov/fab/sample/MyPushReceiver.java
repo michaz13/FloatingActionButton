@@ -116,7 +116,7 @@ public class MyPushReceiver extends ParsePushBroadcastReceiver {
         if (debt.getAuthorPhone() != null) {
             // Create dialing action
             String dialTitle = "Call " + debt.getAuthorName();
-            int dialIcon = R.drawable.ic_call_black_24dp;
+            int dialIcon = R.drawable.ic_call_black_36dp;
             Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getAuthorPhone()));
             PendingIntent notificationCallIntent = PendingIntent.getActivity(context, 0, dialIntent
                     , PendingIntent.FLAG_UPDATE_CURRENT);

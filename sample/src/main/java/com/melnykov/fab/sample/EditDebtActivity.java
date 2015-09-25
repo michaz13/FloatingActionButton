@@ -169,7 +169,7 @@ public class EditDebtActivity extends AppCompatActivity {
             deleteMenuItem.setVisible(true);
         }
         if (isFromPush) {
-            deleteMenuItem.setIcon(R.drawable.ic_cancel_white_24dp);
+            deleteMenuItem.setIcon(R.drawable.ic_cancel_white_36dp);
         }
         return super.onCreateOptionsMenu(menu);
     }
@@ -759,17 +759,17 @@ public class EditDebtActivity extends AppCompatActivity {
             Field searchField = SearchView.class.getDeclaredField("mCloseButton");
             searchField.setAccessible(true);
             closeBtn = (ImageView) searchField.get(searchView);
-            closeBtn.setImageResource(R.drawable.ic_close_white_24dp);
+            closeBtn.setImageResource(R.drawable.ic_close_white_36dp);
 
             searchField = SearchView.class.getDeclaredField("mVoiceButton");
             searchField.setAccessible(true);
             ImageView voiceBtn = (ImageView) searchField.get(searchView);
-            voiceBtn.setImageResource(R.drawable.ic_keyboard_voice_white_24dp);
+            voiceBtn.setImageResource(R.drawable.ic_keyboard_voice_white_36dp);
 
             searchField = SearchView.class.getDeclaredField("mSearchButton");
             searchField.setAccessible(true);
             ImageView searchButton = (ImageView) searchField.get(searchView);
-            searchButton.setImageResource(R.drawable.ic_search_white_24dp);
+            searchButton.setImageResource(R.drawable.ic_search_white_36dp);
 
             // Accessing the SearchAutoComplete
             int queryTextViewId = getResources().getIdentifier("android:id/search_src_text", null, null);
@@ -781,7 +781,7 @@ public class EditDebtActivity extends AppCompatActivity {
             stopHint.append(getString(R.string.findContact));
 
             // Add the icon as an spannable
-            Drawable searchIcon = getResources().getDrawable(R.drawable.ic_search_white_24dp);
+            Drawable searchIcon = getResources().getDrawable(R.drawable.ic_search_white_36dp);
             Method textSizeMethod = clazz.getMethod("getTextSize");
             Float rawTextSize = (Float) textSizeMethod.invoke(autoComplete);
             int textSize = (int) (rawTextSize * 1.25);

@@ -14,21 +14,21 @@ android:layout_height="fill_parent"
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/example_row_b_action_1"
+        android:id="@+id/action_edit"
         style="@style/ListButtonAction"
         android:text="@string/open"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/example_row_b_action_2"
+        android:id="@+id/action_message"
         style="@style/ListButtonAction"
         android:text="Google Play"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/example_row_b_action_3"
+        android:id="@+id/action_call"
         style="@style/ListButtonAction"
         android:text="Uninstall"/>
 

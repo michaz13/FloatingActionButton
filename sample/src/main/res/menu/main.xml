@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/action_edit_mode"
-        android:icon="@drawable/ic_mode_edit_white_24dp"
+        android:icon="@drawable/ic_mode_edit_white_36dp"
         yourapp:showAsAction="always"
         android:visible="false"
         android:title="@string/action_edit_mode">
@@ -12,21 +12,21 @@
 
     <item
         android:id="@+id/action_chart_mode"
-        android:icon="@drawable/ic_insert_chart_white_24dp"
+        android:icon="@drawable/ic_dashboard_white_36dp"
         yourapp:showAsAction="ifRoom"
         android:title="@string/action_chart_mode">
     </item>
 
     <item
         android:id="@+id/action_list_mode"
-        android:icon="@drawable/ic_view_list_white_24dp"
+        android:icon="@drawable/ic_view_list_white_36dp"
         yourapp:showAsAction="ifRoom"
         android:title="@string/action_list_mode">
     </item>
 
     <item
         android:id="@+id/action_sync"
-        android:icon="@drawable/ic_cloud_upload_white_24dp"
+        android:icon="@drawable/ic_cloud_upload_white_36dp"
         yourapp:showAsAction="ifRoom"
         android:title="@string/action_sync">
     </item>
@@ -42,6 +42,11 @@
         yourapp:showAsAction="never"
         android:title="@string/action_login">
     </item>
+
+    <item android:id="@+id/action_settings"
+        android:icon="@drawable/ic_settings_white_36dp"
+        android:title="@string/settings"
+        yourapp:showAsAction="never" />
 
     <item
         android:id="@+id/about"

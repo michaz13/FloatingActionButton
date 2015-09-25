@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.LayoutInflater;
@@ -14,7 +15,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
-import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
@@ -142,7 +142,8 @@ public class ListViewFragment extends android.support.v4.app.Fragment {
 
             @Override
             public void onClickFrontView(int position) {
-                Log.d("swipe", String.format("onClickFrontView %d", position));
+                Debt debt = debtListAdapter.getItem(position);
+                openEditView(debt);
             }
 
             @Override
@@ -162,15 +163,6 @@ public class ListViewFragment extends android.support.v4.app.Fragment {
         });
         // Attach the mQuery adapter to the view
         swipeListView.setAdapter(debtListAdapter);
-
-//        swipeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> parent, View view,
-//                                    int position, long id) {
-//                Debt debt = debtListAdapter.getItem(position);
-//                openEditView(debt);
-//            }
-//        });
 
         FloatingActionButton fab = (FloatingActionButton) root.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -209,6 +201,24 @@ public class ListViewFragment extends android.support.v4.app.Fragment {
     public void onResume() {
         super.onResume();
         updateView();
+        reloadSettings();
+    }
+
+    private void reloadSettings() {
+        SettingsManager settings = SettingsManager.getInstance();
+        swipeListView.setSwipeMode(settings.getSwipeMode());
+        swipeListView.setSwipeActionLeft(settings.getSwipeActionLeft());
+        swipeListView.setSwipeActionRight(settings.getSwipeActionRight());
+        swipeListView.setOffsetLeft(convertDpToPixel(settings.getSwipeOffsetLeft()));
+        swipeListView.setOffsetRight(convertDpToPixel(settings.getSwipeOffsetRight()));
+        swipeListView.setAnimationTime(settings.getSwipeAnimationTime());
+        swipeListView.setSwipeOpenOnLongPress(settings.isSwipeOpenOnLongPress());
+    }
+
+    public int convertDpToPixel(float dp) {
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        float px = dp * (metrics.densityDpi / 160f);
+        return (int) px;
     }
 
     // Helper methods: -----------------------------------------------------------------------------
