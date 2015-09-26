@@ -30,6 +30,13 @@
         <item>India</item>
     </string-array>
 
+    <string name="contact_actions_dialog_title">Choose action</string>
+    <string-array name="contact_actions_array">
+        <item>Chat</item>
+        <item>Call</item>
+        <item>SMS</item>
+    </string-array>
+
     <string name="com_parse_ui_logo_content_description">Logo</string>
     <string name="com_parse_ui_progress_dialog_text">Loading…</string>
     <string name="com_parse_ui_username_input_hint">Username</string>
@@ -140,7 +147,10 @@
 
     <string name="dismiss">Dismiss</string>
     <string name="discard">Discard</string>
-    <string name="open">Open</string>
+    <string name="action1_text">Open</string>
+    <string name="action2_text_with_phone">Contact owner</string>
+    <string name="action2_text_no_phone">(Add phone)</string>
+    <string name="action3_text">Set Alarm</string>
 
     <string name="rightOffset">Right Offset (%1$s dp)</string>
     <string name="leftOffset">Left Offset (%1$s dp)</string>
@@ -163,5 +173,7 @@
     <string name="openOnLongPress">Open On Long Press</string>
 
     <string name="others">Others</string>
+
+    <string name="debt_icon_desc">debt icon</string>
 
 </resources>

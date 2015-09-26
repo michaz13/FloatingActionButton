@@ -70,13 +70,13 @@ public class MainActivity extends AppCompatActivity {
     private boolean isChartMode;
 
     private Intent serviceIntent;
-    private boolean isAllDebtSynced = true;
+    private boolean isSyncOptionVisible = true;
 
 
 //    ListViewFragment iOweViewFragmentWithTag;
 //    ListViewFragmentOweMe oweMeViewFragmentWithTag;
 
-
+    // TODO: 26/09/2015 make messaging, call and push options only for logged in
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -105,13 +105,16 @@ public class MainActivity extends AppCompatActivity {
 //        if (oweMeViewFragmentWithTag == null) {
 //            oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
 //        }
-        updateMenuItemsVisibility();
-        // Check if we have a real user
+        // Check if we have a logged in user
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             // Sync data to Parse
             syncDebtsToParse(!SHOW_LOGIN_ON_ERROR);// TODO: 19/09/2015 make sure it's called after on result from login, so no accidental debts are uploaded
-            // Update the logged in label info
+            // Update the title
             updateLoggedInInfo();
+        }
+        else {
+            // In case the user is logged out, the sync option works as login
+            setSyncOptionVisibility(true);
         }
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra(Debt.KEY_TAB_TAG)) {
@@ -252,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
         chartModeMenuItem.setVisible(!isChartMode);
         listModeMenuItem.setVisible(isChartMode);
 
-        syncMenuItem.setVisible(!isAllDebtSynced);
+        syncMenuItem.setVisible(!isSyncOptionVisible);
     }
 
     @Override
@@ -480,7 +483,7 @@ public class MainActivity extends AppCompatActivity {
                 query.findInBackground(new FindCallback<Debt>() {
                     public void done(List<Debt> debts, ParseException e) {
                         if (e == null) {
-                            isAllDebtSynced = true;
+                            setSyncOptionVisibility(false);
                             for (final Debt debt : debts) {
                                 // Set is draft flag to false before
                                 // syncing to Parse
@@ -507,7 +510,7 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                             // Reset the is draft flag locally to true
                                             debt.setDraft(true);
-                                            isAllDebtSynced = false;
+                                            setSyncOptionVisibility(true);
                                             // Save flag field as late as possible - to deal with
                                             // asynchronous callback
                                             _isShowLoginOnFail = isShowLoginOnFail;
@@ -518,7 +521,7 @@ public class MainActivity extends AppCompatActivity {
                                 });
                             }
                         } else {
-                            isAllDebtSynced = true;
+                            setSyncOptionVisibility(true);
                             Log.i("DebtListActivity",
                                     "syncDebtsToParse: Error finding pinned debts: "
                                             + e.getMessage());
@@ -533,12 +536,24 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // If there is no connection, let the user know the sync didn't
             // happen
-            Toast.makeText(
+            Toast.makeText(// TODO: 26/09/2015 test case
                     getApplicationContext(),
                     "Your device appears to be offline. Some debts may not have been synced to Parse.",
                     Toast.LENGTH_LONG).show();
         }
 
+    }
+
+    private void setSyncOptionVisibility(boolean newValue) {
+        boolean updateMenu = false;
+        if (isSyncOptionVisible != newValue) {
+            // In case the status was changed, make sure the icon visibility is updated
+            updateMenu = true;
+        }
+        isSyncOptionVisible = newValue;
+        if (updateMenu) {
+            supportInvalidateOptionsMenu();
+        }
     }
 
     private void loadFromParse() {

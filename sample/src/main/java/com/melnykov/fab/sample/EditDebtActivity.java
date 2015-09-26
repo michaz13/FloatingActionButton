@@ -45,7 +45,6 @@ import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
 import com.parse.FindCallback;
-import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
@@ -56,7 +55,6 @@ import com.parse.SendCallback;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +67,9 @@ public class EditDebtActivity extends AppCompatActivity {
     static final String ALARM_SCHEME = "timer:";
     private static final int FLAG_FORCE_BACK_TO_MAIN = 0x00040000;
     private static final int FLAG_SET_ALARM = 0X00020000;
+    private static final int ACTION_CHAT = 0;
+    private static final int ACTION_CALL = 1;
+    private static final int ACTION_SMS = 2;
 
     private Button remindButton;
     private CheckBox remindCheckBox;
@@ -476,30 +477,32 @@ public class EditDebtActivity extends AppCompatActivity {
             message = "Talk with " + debt.getOwner() + " about changed details";
         }
         (new AlertDialog.Builder(EditDebtActivity.this)).setMessage(message)
+                .setTitle(R.string.contact_actions_dialog_title)
+                .setItems(R.array.contact_actions_array, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        switch (whichButton) {
+                            case ACTION_CHAT:
+                                openConversationByPhone();
+                                break;
+                            case ACTION_CALL:
+                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+                                startActivity(dial);
+                                break;
+                            case ACTION_SMS:
+                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
+                                startActivity(sms);
+                                break;
 
-                .setPositiveButton("Instant messages", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        openConversationByPhone();
+                        }
                         saveDebt(FLAG_SET_ALARM);
                     }
                 })
-                .setNeutralButton("Phone call", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
-                        startActivity(dial);
-                        saveDebt(FLAG_SET_ALARM);
-                    }
-                })
-                .setNegativeButton("Skip", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
+                .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
                         saveDebt(FLAG_SET_ALARM | FLAG_FORCE_BACK_TO_MAIN);
                     }
                 })
-//                .setItems(R.array.colors_array, new DialogInterface.OnClickListener() {// TODO: 24/09/2015
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        // The 'which' argument contains the index position
-//                        // of the selected item
-//                    }
                 .show();
     }
 
