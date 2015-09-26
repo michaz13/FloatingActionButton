@@ -1,20 +1,20 @@
 package com.melnykov.fab.sample;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.FragmentManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.net.Uri;
-import android.text.format.DateFormat;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,7 +26,6 @@ import com.parse.ParseQuery;
 import com.parse.ParseQueryAdapter;
 import com.parse.ParseUser;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +38,8 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
     private static final int ACTION_CALL = 1;
     private static final int ACTION_SMS = 2;
 
+    Debt mDebt;
+
     private class ViewHolder {
         TextView debtTitle;
         public ImageView debtImage;
@@ -46,6 +47,70 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
         public Button actionEdit;
         public Button action2;
         public Button action3;
+    }
+
+    public static class CustomMenuAdapter extends ArrayAdapter<CharSequence> {
+
+        boolean disableOptionA = true;
+
+        private CustomMenuAdapter(Context context, int textViewResId, CharSequence[] strings, boolean disableOptionA) {
+            super(context, textViewResId, strings);
+            this.disableOptionA = disableOptionA;
+        }
+
+        public static CustomMenuAdapter createFromResource(Context context, int textArrayResId, int textViewResId,
+                                                           boolean disableOptionA) {
+
+            Resources resources = context.getResources();
+            CharSequence[] strings = resources.getTextArray(textArrayResId);
+
+            return new CustomMenuAdapter(context, textViewResId, strings, disableOptionA);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view = super.getView(position, convertView, parent);
+            switch (position) {
+                case ACTION_CHAT:
+                    view.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+//                            openConversationByPhone(new Debt());
+                            int x = 7;
+                        }
+                    });
+                    break;
+
+                //                            case ACTION_CALL:
+//                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+//                                mContext.startActivity(dial);
+//                                break;
+//                            case ACTION_SMS:
+//                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
+//                                mContext.startActivity(sms);
+//                                break;
+//                            case ACTION_CHAT:
+//                                openConversationByPhone(debt);
+//                                break;
+            }
+            view.setEnabled(isEnabled(position));
+            return view;
+        }
+
+        @Override
+        public boolean areAllItemsEnabled() {
+            return false;
+        }
+
+        @Override
+        public boolean isEnabled(int position) {
+            if (position == 0) {
+                if (disableOptionA) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
 
     private final Context mContext;
@@ -90,55 +155,54 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
         }
 
         if (debt.getPhone() != null) {
-                holder.action2.setText(R.string.action2_text_with_phone);
-                holder.action2.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        showActionsDialog(debt);
-                    }
-                });
-
-        } else {
             holder.action2.setText(R.string.action2_text_with_phone);
             holder.action2.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    openConversationByPhone(debt);
+//                    showActionsDialog(debt);
+                }
+            });
+
+        } else {
+            holder.action2.setText(R.string.action2_text_no_phone);
+            holder.action2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // TODO: 9/26/2015
                 }
             });
         }
+//        holder.action3.setText(mContext.getString(R.string.action3_text, debt.getDueDate()));
         holder.action3.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                SlideDateTimeListener listener = new SlideDateTimeListener() {
-//
-//                    @SuppressWarnings("deprecation")
-//                    @Override
-//                    public void onDateTimeSet(Date date) {
-//                        date.setSeconds(0);
-//                        remindButton.setText(DateFormat.format("MM/dd/yy h:mmaa", date.getTime()));
-//                        remindCheckBox.setChecked(true);
-//                        debt.setDueDate(date);
-//                    }
-//
-//                    @Override
-//                    public void onDateTimeCancel() {
-//
-//                    }
-//                };
-//                Date initDate;
-//                Date currDate = debt.getDueDate();
-//                if (currDate != null) {
-//                    initDate = currDate;
-//                } else {
-//                    initDate = new Date();
-//                }
-//                new SlideDateTimePicker.Builder((android.support.v7.app.FragmentManager)((Activity) mContext).getFragmentManager())
-//                        .setListener(listener)
-//                        .setInitialDate(initDate)
-//                        .setIndicatorColor(Color.RED)
-//                        .build()
-//                        .show();
+                SlideDateTimeListener listener = new SlideDateTimeListener() {
+
+                    @SuppressWarnings("deprecation")
+                    @Override
+                    public void onDateTimeSet(Date date) {
+                        date.setSeconds(0);
+                        debt.setDueDate(date);
+                    }
+
+                    @Override
+                    public void onDateTimeCancel() {
+
+                    }
+                };
+                Date initDate;
+                Date currDate = debt.getDueDate();
+                if (currDate != null) {
+                    initDate = currDate;
+                } else {
+                    initDate = new Date();
+                }
+                new SlideDateTimePicker.Builder(((AppCompatActivity) mContext).getSupportFragmentManager())
+                        .setListener(listener)
+                        .setInitialDate(initDate)
+                        .setIndicatorColor(Color.RED)
+                        .build()
+                        .show();
             }
         });
 
@@ -187,39 +251,49 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
      * Show a confirmation push notification dialog, with an option to call the owner.
      */
     private void showActionsDialog(final Debt debt) {
-        String[] items = mContext.getResources().getStringArray(R.array.contact_actions_array);
-        ArrayList<String> itemsList = new ArrayList<>();
+//        String[] items = mContext.getResources().getStringArray(R.array.contact_actions_array);
+//        ArrayList<String> itemsList = new ArrayList<>();
+//        itemsList.add(items[ACTION_CALL]);
+//        itemsList.add(items[ACTION_SMS]);
+//        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+//            itemsList.add(items[ACTION_CHAT]);
+//        }
+        /*boolean disableOptionA = false;
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
-            itemsList.add(ACTION_CHAT, items[ACTION_CHAT]);
+            disableOptionA = true;
         }
-        itemsList.add(ACTION_CALL, items[ACTION_CALL]);
-        itemsList.add(ACTION_SMS, items[ACTION_CALL]);
+        ListView modeList = new ListView(mContext);
+        final ArrayAdapter<CharSequence> modeAdapter = CustomMenuAdapter.createFromResource(mContext, R.array.contact_actions_array_logged_in,
+                android.R.layout.simple_list_item_single_choice, disableOptionA);
+        modeList.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        modeList.setAdapter(modeAdapter);
         (new AlertDialog.Builder(mContext))
-                .setTitle(R.string.contact_actions_dialog_title)
-                .setItems((String[]) itemsList.toArray(), new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        switch (whichButton) {
-                            case ACTION_CHAT:
-                                openConversationByPhone(debt);
-                                break;
-                            case ACTION_CALL:
-                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
-                                mContext.startActivity(dial);
-                                break;
-                            case ACTION_SMS:
-                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
-                                mContext.startActivity(sms);
-                                break;
-
-                        }
-                    }
-                })
+                .setTitle(R.string.contact_actions_dialog_title_new_debt)
+//                .setItems((String[]) itemsList.toArray(), new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface dialog, int whichButton) {
+//                        switch (whichButton) {
+//                            case ACTION_CALL:
+//                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+//                                mContext.startActivity(dial);
+//                                break;
+//                            case ACTION_SMS:
+//                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
+//                                mContext.startActivity(sms);
+//                                break;
+//                            case ACTION_CHAT:
+//                                openConversationByPhone(debt);
+//                                break;
+//
+//                        }
+//                    }
+//                })
+                .setView(modeList)
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
                     @Override
                     public void onCancel(DialogInterface dialog) {
                     }
                 })
-                .show();
+                .show();*/
     }
 
 

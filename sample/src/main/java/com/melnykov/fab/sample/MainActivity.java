@@ -434,7 +434,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void unsubscribeFromPush() {
         List<String> subscribedChannels = ParseInstallation.getCurrentInstallation().getList("channels");
-        String currUserChannel = USER_CHANNEL_PREFIX + ParseUser.getCurrentUser().getString("phone").replaceAll("[^0-9]+", "");
+        String phone  = ParseUser.getCurrentUser().getString("phone");
+        if (phone == null) {
+            return;
+        }
+        String currUserChannel = USER_CHANNEL_PREFIX + phone.replaceAll("[^0-9]+", "");
         if (subscribedChannels != null && subscribedChannels.contains(currUserChannel)) {
             ParsePush.unsubscribeInBackground(currUserChannel);
         }

@@ -45,6 +45,7 @@ import com.github.jjobes.slidedatetimepicker.SlideDateTimeListener;
 import com.github.jjobes.slidedatetimepicker.SlideDateTimePicker;
 import com.google.gson.Gson;
 import com.parse.FindCallback;
+import com.parse.ParseAnonymousUtils;
 import com.parse.ParseException;
 import com.parse.ParsePush;
 import com.parse.ParseQuery;
@@ -67,9 +68,9 @@ public class EditDebtActivity extends AppCompatActivity {
     static final String ALARM_SCHEME = "timer:";
     private static final int FLAG_FORCE_BACK_TO_MAIN = 0x00040000;
     private static final int FLAG_SET_ALARM = 0X00020000;
-    private static final int ACTION_CHAT = 0;
-    private static final int ACTION_CALL = 1;
-    private static final int ACTION_SMS = 2;
+    private static final int ACTION_CALL = 0;
+    private static final int ACTION_SMS = 1;
+    private static final int ACTION_CHAT = 2;
 
     private Button remindButton;
     private CheckBox remindCheckBox;
@@ -469,16 +470,28 @@ public class EditDebtActivity extends AppCompatActivity {
     /**
      * Show a confirmation push notification dialog, with an option to call the owner.
      */
-    private void showActionsDialog() {
-        String message;
+                                                                                                                private void showActionsDialog() {
+        String message; // remove
         if (isNew) {
             message = "Talk with " + debt.getOwner() + " about " + (debt.getTabTag().equals(Debt.I_OWE_TAG) ? "your" : "his") + " debt";
         } else {
             message = "Talk with " + debt.getOwner() + " about changed details";
         }
-        (new AlertDialog.Builder(EditDebtActivity.this)).setMessage(message)
-                .setTitle(R.string.contact_actions_dialog_title)
-                .setItems(R.array.contact_actions_array, new DialogInterface.OnClickListener() {
+        int title;
+        if (isNew) {
+            title = R.string.contact_actions_dialog_title_new_debt;
+        } else {
+            title = R.string.contact_actions_dialog_title_modified_debt;
+        }
+        int array;
+        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+            array = R.array.contact_actions_array_logged_in;
+        } else {
+            array = R.array.contact_actions_array_logged_out;
+        }
+        (new AlertDialog.Builder(EditDebtActivity.this))
+                .setTitle(title)
+                .setItems(array, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         switch (whichButton) {
                             case ACTION_CHAT:

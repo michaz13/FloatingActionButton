@@ -30,9 +30,15 @@
         <item>India</item>
     </string-array>
 
-    <string name="contact_actions_dialog_title">Choose action</string>
-    <string-array name="contact_actions_array">
+    <string name="contact_actions_dialog_title_new_debt">Debt created</string>
+    <string name="contact_actions_dialog_title_modified_debt">Details changed</string>
+    <string-array name="contact_actions_array_logged_in">
+        <item>Call</item>
+        <item>SMS</item>
         <item>Chat</item>
+    </string-array>
+
+    <string-array name="contact_actions_array_logged_out">
         <item>Call</item>
         <item>SMS</item>
     </string-array>
@@ -150,7 +156,7 @@
     <string name="action1_text">Open</string>
     <string name="action2_text_with_phone">Contact owner</string>
     <string name="action2_text_no_phone">(Add phone)</string>
-    <string name="action3_text">Set Alarm</string>
+    <string name="action3_text">Reminder</string>
 
     <string name="rightOffset">Right Offset (%1$s dp)</string>
     <string name="leftOffset">Left Offset (%1$s dp)</string>
