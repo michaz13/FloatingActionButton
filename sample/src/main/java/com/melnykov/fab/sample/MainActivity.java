@@ -105,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
 //        if (oweMeViewFragmentWithTag == null) {
 //            oweMeViewFragmentWithTag = (ListViewFragmentOweMe) getSupportFragmentManager().findFragmentByTag(Debt.OWE_ME_TAG);
 //        }
+        updateMenuItemsVisibility();
         // Check if we have a real user
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
             // Sync data to Parse
@@ -242,14 +243,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-
-        updateMenuItemsVisibility();
-
-        return true;
-    }
 
     private void updateMenuItemsVisibility() {
         boolean isRealUser = !ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser());
@@ -487,7 +480,6 @@ public class MainActivity extends AppCompatActivity {
                 query.findInBackground(new FindCallback<Debt>() {
                     public void done(List<Debt> debts, ParseException e) {
                         if (e == null) {
-
                             isAllDebtSynced = true;
                             for (final Debt debt : debts) {
                                 // Set is draft flag to false before
