@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +15,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,22 +34,20 @@ import java.util.List;
  */
 class DebtListAdapter extends ParseQueryAdapter<Debt> {
 
-    private static final int ACTION_CHAT = 0;
-    private static final int ACTION_CALL = 1;
-    private static final int ACTION_SMS = 2;
-
-    Debt mDebt;
+    static final int ACTION_CALL = 0;
+    static final int ACTION_SMS = 1;
+    static final int ACTION_CHAT = 2;
 
     private class ViewHolder {
         TextView debtTitle;
         public ImageView debtImage;
         public TextView debtDescription;
-        public Button actionEdit;
+        public Button action1;
         public Button action2;
         public Button action3;
     }
 
-    public static class CustomMenuAdapter extends ArrayAdapter<CharSequence> {
+    public static class CustomMenuAdapter extends ArrayAdapter<CharSequence> {// REMOVE: 27/09/2015
 
         boolean disableOptionA = true;
 
@@ -80,18 +78,6 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
                         }
                     });
                     break;
-
-                //                            case ACTION_CALL:
-//                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
-//                                mContext.startActivity(dial);
-//                                break;
-//                            case ACTION_SMS:
-//                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
-//                                mContext.startActivity(sms);
-//                                break;
-//                            case ACTION_CHAT:
-//                                openConversationByPhone(debt);
-//                                break;
             }
             view.setEnabled(isEnabled(position));
             return view;
@@ -130,7 +116,7 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
             holder.debtTitle = (TextView) view
                     .findViewById(R.id.debt_title);
             holder.debtDescription = (TextView) view.findViewById(R.id.example_row_tv_description);
-            holder.actionEdit = (Button) view.findViewById(R.id.action_edit);
+            holder.action1 = (Button) view.findViewById(R.id.action_edit);
             holder.action2 = (Button) view.findViewById(R.id.action_message);
             holder.action3 = (Button) view.findViewById(R.id.action_call);
             view.setTag(holder);
@@ -141,28 +127,29 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
         TextView debtDescription = holder.debtDescription;
         ImageView debtImage = holder.debtImage;
 
-        holder.actionEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openEditView(debt);
-            }
-        });
-
         if (debt.getCurrencyPos() != Debt.NON_MONEY_DEBT_CURRENCY) {
             debtImage.setImageResource(R.drawable.dollar);
         } else {
             debtImage.setImageResource(R.drawable.box_closed_icon);// TODO: 25/09/2015 image / location
         }
 
+        // Action 1:
+        holder.action1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openEditView(debt);
+            }
+        });
+
+        // Action 2:
         if (debt.getPhone() != null) {
             holder.action2.setText(R.string.action2_text_with_phone);
             holder.action2.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    showActionsDialog(debt);
+                    showActionsDialog(debt);
                 }
             });
-
         } else {
             holder.action2.setText(R.string.action2_text_no_phone);
             holder.action2.setOnClickListener(new View.OnClickListener() {
@@ -251,49 +238,33 @@ class DebtListAdapter extends ParseQueryAdapter<Debt> {
      * Show a confirmation push notification dialog, with an option to call the owner.
      */
     private void showActionsDialog(final Debt debt) {
-//        String[] items = mContext.getResources().getStringArray(R.array.contact_actions_array);
-//        ArrayList<String> itemsList = new ArrayList<>();
-//        itemsList.add(items[ACTION_CALL]);
-//        itemsList.add(items[ACTION_SMS]);
-//        if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
-//            itemsList.add(items[ACTION_CHAT]);
-//        }
-        /*boolean disableOptionA = false;
+        int array;
         if (!ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
-            disableOptionA = true;
+            array = R.array.contact_actions_array_logged_in;
+        } else {
+            array = R.array.contact_actions_array_logged_out;
         }
-        ListView modeList = new ListView(mContext);
-        final ArrayAdapter<CharSequence> modeAdapter = CustomMenuAdapter.createFromResource(mContext, R.array.contact_actions_array_logged_in,
-                android.R.layout.simple_list_item_single_choice, disableOptionA);
-        modeList.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        modeList.setAdapter(modeAdapter);
         (new AlertDialog.Builder(mContext))
-                .setTitle(R.string.contact_actions_dialog_title_new_debt)
-//                .setItems((String[]) itemsList.toArray(), new DialogInterface.OnClickListener() {
-//                    public void onClick(DialogInterface dialog, int whichButton) {
-//                        switch (whichButton) {
-//                            case ACTION_CALL:
-//                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
-//                                mContext.startActivity(dial);
-//                                break;
-//                            case ACTION_SMS:
-//                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
-//                                mContext.startActivity(sms);
-//                                break;
-//                            case ACTION_CHAT:
-//                                openConversationByPhone(debt);
-//                                break;
-//
-//                        }
-//                    }
-//                })
-                .setView(modeList)
-                .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialog) {
+                .setTitle(R.string.contact_actions_dialog_title_action)
+                .setItems(array, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        switch (whichButton) {
+                            case ACTION_CHAT:
+                                openConversationByPhone(debt);
+                                break;
+                            case ACTION_CALL:
+                                Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
+                                mContext.startActivity(dial);
+                                break;
+                            case ACTION_SMS:
+                                Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
+                                mContext.startActivity(sms);
+                                break;
+
+                        }
                     }
                 })
-                .show();*/
+                .show();
     }
 
 

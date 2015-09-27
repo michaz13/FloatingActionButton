@@ -68,9 +68,6 @@ public class EditDebtActivity extends AppCompatActivity {
     static final String ALARM_SCHEME = "timer:";
     private static final int FLAG_FORCE_BACK_TO_MAIN = 0x00040000;
     private static final int FLAG_SET_ALARM = 0X00020000;
-    private static final int ACTION_CALL = 0;
-    private static final int ACTION_SMS = 1;
-    private static final int ACTION_CHAT = 2;
 
     private Button remindButton;
     private CheckBox remindCheckBox;
@@ -470,13 +467,7 @@ public class EditDebtActivity extends AppCompatActivity {
     /**
      * Show a confirmation push notification dialog, with an option to call the owner.
      */
-                                                                                                                private void showActionsDialog() {
-        String message; // remove
-        if (isNew) {
-            message = "Talk with " + debt.getOwner() + " about " + (debt.getTabTag().equals(Debt.I_OWE_TAG) ? "your" : "his") + " debt";
-        } else {
-            message = "Talk with " + debt.getOwner() + " about changed details";
-        }
+    private void showActionsDialog() {
         int title;
         if (isNew) {
             title = R.string.contact_actions_dialog_title_new_debt;
@@ -494,14 +485,14 @@ public class EditDebtActivity extends AppCompatActivity {
                 .setItems(array, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         switch (whichButton) {
-                            case ACTION_CHAT:
+                            case DebtListAdapter.ACTION_CHAT:
                                 openConversationByPhone();
                                 break;
-                            case ACTION_CALL:
+                            case DebtListAdapter.ACTION_CALL:
                                 Intent dial = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + debt.getPhone()));
                                 startActivity(dial);
                                 break;
-                            case ACTION_SMS:
+                            case DebtListAdapter.ACTION_SMS:
                                 Intent sms = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", debt.getPhone(), null));
                                 startActivity(sms);
                                 break;

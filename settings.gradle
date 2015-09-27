@@ -1,1 +1,1 @@
-include ':library', ':sample', ':ParseLoginUI', ':slideDateTimePicker'
+include ':fab', ':app', ':ParseLoginUI', ':slideDateTimePicker', ':psl'

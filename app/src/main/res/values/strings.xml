@@ -30,6 +30,7 @@
         <item>India</item>
     </string-array>
 
+    <string name="contact_actions_dialog_title_action">Debt created</string>
     <string name="contact_actions_dialog_title_new_debt">Debt created</string>
     <string name="contact_actions_dialog_title_modified_debt">Details changed</string>
     <string-array name="contact_actions_array_logged_in">
