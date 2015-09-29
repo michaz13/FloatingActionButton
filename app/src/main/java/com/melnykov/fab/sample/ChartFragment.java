@@ -239,12 +239,14 @@ public class ChartFragment extends android.support.v4.app.Fragment {
 
     private void setData(int fromIndex, int toIndex) {
         int totalValue = 0;
+        String centerText=null;
 
         if (fromIndex > toIndex) {
             toIndex = fromIndex + 1;
         }
         if (mData == null || mData.size() <= 0) {
             toIndex = 0;
+            centerText = "Add money debts in list mode.";
         }
         ArrayList<Entry> yVals = new ArrayList<>();
 
@@ -292,7 +294,11 @@ public class ChartFragment extends android.support.v4.app.Fragment {
         data.setValueFormatter(new PercentFormatter());
         data.setValueTextSize(10f);
 
-        mChart.setCenterText("Total Value\n" + totalValue + "\n(all slices)");
+        if(centerText==null){
+            // list not empty
+            centerText = "Total Value\n" + totalValue + "\n(all slices)";
+        }
+        mChart.setCenterText(centerText);
         mChart.setData(data);
 
         // undo all highlights

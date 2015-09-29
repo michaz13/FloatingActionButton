@@ -445,6 +445,10 @@ public class EditDebtActivity extends AppCompatActivity {
             return;
         }
         ParsePush push = new ParsePush();
+        String phone = debt.getPhone();
+        if (phone == null) {
+            return;
+        }
         push.setChannel(MainActivity.USER_CHANNEL_PREFIX + debt.getPhone().replaceAll("[^0-9]+", ""));
         Gson gson = new Gson(); // Or use new GsonBuilder().create();
         // TODO: 14/09/2015 use proxy (add image, date): https://gist.github.com/janakagamini/f5c63ea27bee8b7b7581
@@ -534,7 +538,11 @@ public class EditDebtActivity extends AppCompatActivity {
     private void sendPushToOwner() {
         // TODO: 14/09/2015 send only if data was changed
         ParsePush push = new ParsePush();
-        push.setChannel(MainActivity.USER_CHANNEL_PREFIX + debt.getPhone().replaceAll("[^0-9]+", ""));
+        String phone = debt.getPhone();
+        if (phone == null) {
+            return;
+        }
+        push.setChannel(MainActivity.USER_CHANNEL_PREFIX + phone.replaceAll("[^0-9]+", ""));
         Gson gson = new Gson(); // Or use new GsonBuilder().create();
         // TODO: 14/09/2015 use proxy (add image, date): https://gist.github.com/janakagamini/f5c63ea27bee8b7b7581
         push.setMessage(debt.getUuidString()/*gson.toJson(o)*/);///**/);

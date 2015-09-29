@@ -130,6 +130,9 @@ public class Debt extends ParseObject {
     }
 
     private String formatToE164(String phone, String userCountry) {
+        if (phone == null) {
+            return null;
+        }
         PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
         Phonenumber.PhoneNumber numberProto = null;
         try {
